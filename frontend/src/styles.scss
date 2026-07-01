@@ -1,0 +1,90 @@
+/* PrimeIcons + PrimeFlex utilities. PrimeNG theme is provided via Aura preset. */
+@import 'primeicons/primeicons.css';
+@import 'primeflex/primeflex.css';
+
+:root {
+  --ats-bg: #f1f5f9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family:
+    'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol';
+  background: var(--ats-bg);
+  color: var(--p-text-color);
+}
+
+a {
+  color: inherit;
+}
+
+/* Auth screens */
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #ec4899 100%);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+/* App layout */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-content {
+  flex: 1;
+  padding: 1.5rem;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 1.25rem;
+}
+.page-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+}
+.page-header p {
+  margin: 0;
+  color: var(--p-text-muted-color);
+}
+
+.kpi-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+.kpi-label {
+  color: var(--p-text-muted-color);
+  font-size: 0.85rem;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.color-swatch {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 3px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0.5rem;
+}
