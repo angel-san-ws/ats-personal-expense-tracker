@@ -113,6 +113,13 @@ export interface DashboardSummary {
   }[];
   byCard: { card: string; total: number; count: number }[];
   byMonth: { month: string; total: number; count: number }[];
+  /** Per-day totals within the range (day is YYYY-MM-DD). */
+  byDay: { day: string; total: number; count: number }[];
+  /**
+   * Totals for the selected window and the 3 preceding windows of the same
+   * length, oldest first. Empty for ranges longer than 31 days or without dates.
+   */
+  previousPeriods: { from: string; to: string; total: number; count: number }[];
   topMerchants: { comercio: string; total: number; count: number }[];
 }
 

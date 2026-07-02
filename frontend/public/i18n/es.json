@@ -48,6 +48,8 @@
     "topMerchant": "Comercio principal",
     "byCategory": "Gasto por categoría",
     "overTime": "Gasto en el tiempo",
+    "cumulative": "Gasto acumulado",
+    "vsPrevious": "Gasto vs. períodos anteriores",
     "byCard": "Gasto por tarjeta",
     "topMerchants": "Comercios principales",
     "noData": "No hay datos para los filtros seleccionados. Importa un estado de cuenta para comenzar."

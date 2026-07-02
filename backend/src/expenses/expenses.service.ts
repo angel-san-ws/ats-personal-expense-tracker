@@ -54,6 +54,14 @@ export interface DashboardSummary {
   }[];
   byCard: { card: string; total: number; count: number }[];
   byMonth: { month: string; total: number; count: number }[];
+  /** Per-day totals within the range (day is YYYY-MM-DD). */
+  byDay: { day: string; total: number; count: number }[];
+  /**
+   * Totals for the selected window and the 3 preceding windows of the same
+   * length, oldest first (last entry = the selected window). Only computed
+   * for ranges of at most 31 days; empty otherwise.
+   */
+  previousPeriods: { from: string; to: string; total: number; count: number }[];
   topMerchants: { comercio: string; total: number; count: number }[];
 }
 
@@ -378,6 +386,55 @@ export class ExpensesService {
       count: parseInt(r.count, 10) || 0,
     }));
 
+    // By day
+    const byDayRaw = await this.baseQuery(userId, dto, true)
+      .select("to_char(e.fecha, 'YYYY-MM-DD')", 'day')
+      .addSelect('COALESCE(SUM(e.valor), 0)', 'total')
+      .addSelect('COUNT(e.id)', 'count')
+      .groupBy('e.fecha')
+      .orderBy('e.fecha', 'ASC')
+      .getRawMany();
+
+    const byDay = byDayRaw.map((r) => ({
+      day: r.day,
+      total: parseFloat(r.total) || 0,
+      count: parseInt(r.count, 10) || 0,
+    }));
+
+    // Selected window vs the 3 preceding windows of the same length
+    const previousPeriods: DashboardSummary['previousPeriods'] = [];
+    if (dto.dateFrom && dto.dateTo) {
+      const from = new Date(`${dto.dateFrom}T00:00:00`);
+      const to = new Date(`${dto.dateTo}T00:00:00`);
+      const days =
+        Math.round((to.getTime() - from.getTime()) / 86_400_000) + 1;
+      if (days >= 1 && days <= 31) {
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const iso = (d: Date) =>
+          `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        for (let i = 3; i >= 0; i--) {
+          const wFrom = new Date(from);
+          wFrom.setDate(wFrom.getDate() - i * days);
+          const wTo = new Date(to);
+          wTo.setDate(wTo.getDate() - i * days);
+          const window = { from: iso(wFrom), to: iso(wTo) };
+          const raw = await this.baseQuery(
+            userId,
+            { ...dto, dateFrom: window.from, dateTo: window.to },
+            true,
+          )
+            .select('COALESCE(SUM(e.valor), 0)', 'total')
+            .addSelect('COUNT(e.id)', 'count')
+            .getRawOne();
+          previousPeriods.push({
+            ...window,
+            total: parseFloat(raw.total) || 0,
+            count: parseInt(raw.count, 10) || 0,
+          });
+        }
+      }
+    }
+
     // Top merchants
     const topMerchantsRaw = await this.baseQuery(userId, dto, true)
       .select('e.comercio', 'comercio')
@@ -402,6 +459,8 @@ export class ExpensesService {
       byCategory,
       byCard,
       byMonth,
+      byDay,
+      previousPeriods,
       topMerchants,
     };
   }

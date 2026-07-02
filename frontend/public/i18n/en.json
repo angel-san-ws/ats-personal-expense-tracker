@@ -48,6 +48,8 @@
     "topMerchant": "Top merchant",
     "byCategory": "Spend by category",
     "overTime": "Spend over time",
+    "cumulative": "Cumulative spend",
+    "vsPrevious": "Spend vs. previous periods",
     "byCard": "Spend by card",
     "topMerchants": "Top merchants",
     "noData": "No data for the selected filters. Import a statement to get started."
