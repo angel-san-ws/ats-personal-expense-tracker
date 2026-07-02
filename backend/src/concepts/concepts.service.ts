@@ -6,6 +6,7 @@ import { Category } from '../categories/category.entity';
 import { MerchantCategoryStat } from './merchant-category-stat.entity';
 import { AssignCategoryDto } from './dto';
 import { merchantKey, suggestCategoryName } from '../common/category-suggester';
+import { categoryNameCandidates } from '../common/default-categories';
 
 export interface ConceptWithStats {
   id: string;
@@ -162,7 +163,9 @@ export class ConceptsService {
     ];
     for (const suggestion of suggestions) {
       const category = suggestion
-        ? byName.get(suggestion.toLowerCase())
+        ? categoryNameCandidates(suggestion)
+            .map((name) => byName.get(name))
+            .find((c) => c !== undefined)
         : undefined;
       if (category) {
         return {
@@ -227,7 +230,9 @@ export class ConceptsService {
       ];
       for (const suggestion of suggestions) {
         const categoryId = suggestion
-          ? categoryIdByName.get(suggestion.toLowerCase())
+          ? categoryNameCandidates(suggestion)
+              .map((name) => categoryIdByName.get(name))
+              .find((id) => id !== undefined)
           : undefined;
         if (categoryId) {
           concept.categoryId = categoryId;

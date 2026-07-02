@@ -10,8 +10,10 @@ export class LanguageService {
   readonly current = signal<AppLanguage>('en');
 
   init(): void {
-    const stored = (localStorage.getItem(LANG_KEY) as AppLanguage) || 'en';
-    this.use(stored);
+    const stored = localStorage.getItem(LANG_KEY);
+    const lang =
+      stored === 'en' || stored === 'es' ? stored : detectBrowserLanguage();
+    this.use(lang);
   }
 
   use(lang: AppLanguage): void {
@@ -23,4 +25,17 @@ export class LanguageService {
   get active(): AppLanguage {
     return this.current();
   }
+}
+
+/** OS/browser preference, used before the user has picked a language. */
+function detectBrowserLanguage(): AppLanguage {
+  const preferred = navigator.languages?.length
+    ? navigator.languages
+    : [navigator.language];
+  for (const tag of preferred) {
+    const base = tag?.slice(0, 2).toLowerCase();
+    if (base === 'es') return 'es';
+    if (base === 'en') return 'en';
+  }
+  return 'en';
 }

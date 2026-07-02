@@ -19,7 +19,12 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthResult> {
-    const user = await this.users.createUser(dto.email, dto.name, dto.password);
+    const user = await this.users.createUser(
+      dto.email,
+      dto.name,
+      dto.password,
+      dto.language,
+    );
     return this.buildResult(user.id, user.email, toPublicUser(user));
   }
 

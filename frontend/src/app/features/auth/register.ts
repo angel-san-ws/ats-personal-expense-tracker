@@ -13,8 +13,11 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
+import { SelectModule } from 'primeng/select';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { LanguageService } from '../../core/i18n/language.service';
+import { AppLanguage } from '../../core/models';
 import { PASSWORD_RULES, PasswordRule, strongPasswordValidator } from '../../core/auth/password-policy';
 
 function matchPasswords(control: AbstractControl): ValidationErrors | null {
@@ -34,6 +37,7 @@ function matchPasswords(control: AbstractControl): ValidationErrors | null {
     PasswordModule,
     ButtonModule,
     MessageModule,
+    SelectModule,
   ],
   template: `
     <div class="auth-shell" *transloco="let t">
@@ -60,6 +64,20 @@ function matchPasswords(control: AbstractControl): ValidationErrors | null {
               class="w-full"
               autocomplete="email"
             />
+          </div>
+
+          <div class="flex flex-column gap-1">
+            <label for="language">{{ t('auth.language') }}</label>
+            <p-select
+              inputId="language"
+              formControlName="language"
+              [options]="languageOptions"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-full"
+              (onChange)="onLanguageChange($event.value)"
+            />
+            <small class="text-color-secondary">{{ t('auth.languageHint') }}</small>
           </div>
 
           <div class="flex flex-column gap-1">
@@ -129,21 +147,33 @@ export class RegisterComponent {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private lang = inject(LanguageService);
 
   loading = signal(false);
   error = signal(false);
 
   passwordRules = PASSWORD_RULES;
 
+  // Language names are shown in their own language on purpose.
+  languageOptions = [
+    { label: 'English', value: 'en' as AppLanguage },
+    { label: 'Español', value: 'es' as AppLanguage },
+  ];
+
   form = this.fb.nonNullable.group(
     {
       name: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
+      language: [this.lang.active],
       password: ['', [Validators.required, strongPasswordValidator]],
       confirmPassword: ['', [Validators.required]],
     },
     { validators: matchPasswords },
   );
+
+  onLanguageChange(value: AppLanguage): void {
+    this.lang.use(value);
+  }
 
   ruleOk(rule: PasswordRule): boolean {
     return rule.test(this.form.controls.password.value ?? '');
@@ -153,8 +183,8 @@ export class RegisterComponent {
     if (this.form.invalid) return;
     this.loading.set(true);
     this.error.set(false);
-    const { email, name, password } = this.form.getRawValue();
-    this.auth.register(email, name, password).subscribe({
+    const { email, name, password, language } = this.form.getRawValue();
+    this.auth.register(email, name, password, language).subscribe({
       next: () => this.router.navigate(['/dashboard']),
       error: () => {
         this.error.set(true);

@@ -36,7 +36,9 @@
     "ruleUppercase": "An uppercase letter",
     "ruleLowercase": "A lowercase letter",
     "ruleNumber": "A number",
-    "ruleSpecial": "A special character (e.g. !@#$%)"
+    "ruleSpecial": "A special character (e.g. !@#$%)",
+    "language": "Language",
+    "languageHint": "Your default categories will be created in this language"
   },
   "dashboard": {
     "title": "Dashboard",

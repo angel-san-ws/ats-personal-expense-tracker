@@ -8,23 +8,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 
-import { User } from './user.entity';
+import { AppLanguage, User } from './user.entity';
 import { Category } from '../categories/category.entity';
 import { ChangePasswordDto, UpdateProfileDto, UpdateSettingsDto } from './dto';
-
-const DEFAULT_CATEGORIES: { name: string; color: string }[] = [
-  { name: 'Food & Dining', color: '#ef4444' },
-  { name: 'Groceries', color: '#22c55e' },
-  { name: 'Transport', color: '#3b82f6' },
-  { name: 'Fuel', color: '#f59e0b' },
-  { name: 'Shopping', color: '#a855f7' },
-  { name: 'Entertainment', color: '#ec4899' },
-  { name: 'Health', color: '#14b8a6' },
-  { name: 'Services', color: '#64748b' },
-  { name: 'Travel', color: '#0ea5e9' },
-  { name: 'Education', color: '#8b5cf6' },
-  { name: 'Other', color: '#9ca3af' },
-];
+import { defaultCategoriesFor } from '../common/default-categories';
 
 @Injectable()
 export class UsersService {
@@ -44,7 +31,12 @@ export class UsersService {
     return user;
   }
 
-  async createUser(email: string, name: string, password: string): Promise<User> {
+  async createUser(
+    email: string,
+    name: string,
+    password: string,
+    language: AppLanguage = 'en',
+  ): Promise<User> {
     const normalized = email.toLowerCase().trim();
     const existing = await this.findByEmail(normalized);
     if (existing) throw new ConflictException('Email is already registered');
@@ -54,14 +46,18 @@ export class UsersService {
       email: normalized,
       name: name.trim(),
       passwordHash,
+      language,
     });
     const saved = await this.users.save(user);
-    await this.seedDefaultCategories(saved.id);
+    await this.seedDefaultCategories(saved.id, language);
     return saved;
   }
 
-  private async seedDefaultCategories(userId: string): Promise<void> {
-    const rows = DEFAULT_CATEGORIES.map((c) =>
+  private async seedDefaultCategories(
+    userId: string,
+    language: AppLanguage,
+  ): Promise<void> {
+    const rows = defaultCategoriesFor(language).map((c) =>
       this.categories.create({ ...c, userId }),
     );
     await this.categories.save(rows);

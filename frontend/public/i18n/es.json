@@ -36,7 +36,9 @@
     "ruleUppercase": "Una letra mayúscula",
     "ruleLowercase": "Una letra minúscula",
     "ruleNumber": "Un número",
-    "ruleSpecial": "Un carácter especial (p. ej. !@#$%)"
+    "ruleSpecial": "Un carácter especial (p. ej. !@#$%)",
+    "language": "Idioma",
+    "languageHint": "Tus categorías predeterminadas se crearán en este idioma"
   },
   "dashboard": {
     "title": "Panel",
