@@ -10,6 +10,7 @@ import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { PASSWORD_RULES, isStrongPassword } from '../../core/auth/password-policy';
 import { UsersService } from '../../core/services/users.service';
 import { LanguageService } from '../../core/i18n/language.service';
 import { AppLanguage } from '../../core/models';
@@ -105,6 +106,18 @@ import { AppLanguage } from '../../core/models';
               <div class="flex flex-column gap-1">
                 <label>{{ t('settings.newPassword') }}</label>
                 <p-password [(ngModel)]="newPassword" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full" />
+                <ul class="m-0 mt-1 p-0 list-none flex flex-column gap-1 text-sm">
+                  <li class="text-color-secondary">{{ t('auth.passwordRequirements') }}</li>
+                  @for (rule of passwordRules; track rule.key) {
+                    <li
+                      class="flex align-items-center gap-2"
+                      [style.color]="rule.test(newPassword) ? 'var(--p-green-500)' : 'var(--p-text-muted-color)'"
+                    >
+                      <i class="pi" [class.pi-check-circle]="rule.test(newPassword)" [class.pi-circle]="!rule.test(newPassword)"></i>
+                      {{ t(rule.labelKey) }}
+                    </li>
+                  }
+                </ul>
               </div>
               <div class="flex flex-column gap-1">
                 <label>{{ t('settings.confirmPassword') }}</label>
@@ -143,6 +156,8 @@ export class SettingsComponent implements OnInit {
   newPassword = '';
   confirmPassword = '';
 
+  passwordRules = PASSWORD_RULES;
+
   savingProfile = signal(false);
   savingPrefs = signal(false);
   savingPassword = signal(false);
@@ -177,7 +192,7 @@ export class SettingsComponent implements OnInit {
   canChangePassword(): boolean {
     return (
       !!this.currentPassword &&
-      this.newPassword.length >= 6 &&
+      isStrongPassword(this.newPassword) &&
       this.newPassword === this.confirmPassword
     );
   }

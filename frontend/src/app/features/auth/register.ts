@@ -15,6 +15,7 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { PASSWORD_RULES, PasswordRule, strongPasswordValidator } from '../../core/auth/password-policy';
 
 function matchPasswords(control: AbstractControl): ValidationErrors | null {
   const password = control.get('password')?.value;
@@ -71,6 +72,18 @@ function matchPasswords(control: AbstractControl): ValidationErrors | null {
               inputStyleClass="w-full"
               autocomplete="new-password"
             />
+            <ul class="m-0 mt-1 p-0 list-none flex flex-column gap-1 text-sm">
+              <li class="text-color-secondary">{{ t('auth.passwordRequirements') }}</li>
+              @for (rule of passwordRules; track rule.key) {
+                <li
+                  class="flex align-items-center gap-2"
+                  [style.color]="ruleOk(rule) ? 'var(--p-green-500)' : 'var(--p-text-muted-color)'"
+                >
+                  <i class="pi" [class.pi-check-circle]="ruleOk(rule)" [class.pi-circle]="!ruleOk(rule)"></i>
+                  {{ t(rule.labelKey) }}
+                </li>
+              }
+            </ul>
           </div>
 
           <div class="flex flex-column gap-1">
@@ -120,15 +133,21 @@ export class RegisterComponent {
   loading = signal(false);
   error = signal(false);
 
+  passwordRules = PASSWORD_RULES;
+
   form = this.fb.nonNullable.group(
     {
       name: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, strongPasswordValidator]],
       confirmPassword: ['', [Validators.required]],
     },
     { validators: matchPasswords },
   );
+
+  ruleOk(rule: PasswordRule): boolean {
+    return rule.test(this.form.controls.password.value ?? '');
+  }
 
   submit(): void {
     if (this.form.invalid) return;

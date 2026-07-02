@@ -30,7 +30,13 @@
     "registerSubtitle": "Track and categorize your card expenses",
     "passwordMismatch": "Passwords do not match",
     "loginError": "Invalid email or password",
-    "registerError": "Could not create the account"
+    "registerError": "Could not create the account",
+    "passwordRequirements": "Your password must contain:",
+    "ruleMinLength": "At least 8 characters",
+    "ruleUppercase": "An uppercase letter",
+    "ruleLowercase": "A lowercase letter",
+    "ruleNumber": "A number",
+    "ruleSpecial": "A special character (e.g. !@#$%)"
   },
   "dashboard": {
     "title": "Dashboard",
