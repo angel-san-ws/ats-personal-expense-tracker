@@ -22,4 +22,21 @@ export class ConceptsService {
       {},
     );
   }
+
+  /** Category suggestion for a merchant name (nothing is persisted). */
+  suggest(name: string): Observable<{
+    suggestion: {
+      categoryId: string;
+      categoryName: string;
+      categoryColor: string;
+    } | null;
+  }> {
+    return this.http.get<{
+      suggestion: {
+        categoryId: string;
+        categoryName: string;
+        categoryColor: string;
+      } | null;
+    }>(`${API_BASE}/concepts/suggest`, { params: { name } });
+  }
 }

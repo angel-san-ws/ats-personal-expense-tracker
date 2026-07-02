@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  ViewChild,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { DialogModule } from 'primeng/dialog';
@@ -12,6 +20,7 @@ import { MessageService } from 'primeng/api';
 import { ExpensesService } from '../../core/services/expenses.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { Expense, ExpenseInput, ExpenseKind } from '../../core/models';
+import { CategorySelectComponent } from './category-select';
 
 /**
  * Modal form to manually add or edit an expense/payment.
@@ -28,6 +37,7 @@ import { Expense, ExpenseInput, ExpenseKind } from '../../core/models';
     InputTextModule,
     InputNumberModule,
     ButtonModule,
+    CategorySelectComponent,
   ],
   template: `
     <ng-container *transloco="let t">
@@ -55,6 +65,13 @@ import { Expense, ExpenseInput, ExpenseKind } from '../../core/models';
             </label>
             <input pInputText [(ngModel)]="form.comercio" class="w-full" />
           </div>
+
+          @if (kind === 'expense') {
+            <app-category-select
+              [(categoryId)]="form.categoryId"
+              [merchant]="form.comercio"
+            />
+          }
 
           <div class="flex gap-2">
             <div class="flex flex-column gap-1 flex-1">
@@ -126,6 +143,9 @@ export class ExpenseFormDialogComponent {
   @Input() kind: ExpenseKind = 'expense';
   @Output() saved = new EventEmitter<void>();
 
+  @ViewChild(CategorySelectComponent)
+  private categorySelect?: CategorySelectComponent;
+
   visible = false;
   saving = signal(false);
   editing = signal<Expense | null>(null);
@@ -139,6 +159,7 @@ export class ExpenseFormDialogComponent {
     tarjeta: string;
     noTarjeta: string;
     tipoMovimiento: string;
+    categoryId: string | null;
   } = this.emptyForm();
 
   headerKey(): string {
@@ -160,9 +181,11 @@ export class ExpenseFormDialogComponent {
           tarjeta: expense.tarjeta ?? '',
           noTarjeta: expense.noTarjeta ?? '',
           tipoMovimiento: expense.tipoMovimiento ?? '',
+          categoryId: expense.categoryId,
         }
       : this.emptyForm();
     this.loadCurrencies();
+    this.categorySelect?.reload();
     this.visible = true;
   }
 
@@ -185,6 +208,7 @@ export class ExpenseFormDialogComponent {
       tarjeta: this.form.tarjeta.trim(),
       noTarjeta: this.form.noTarjeta.trim(),
       tipoMovimiento: this.form.tipoMovimiento.trim(),
+      categoryId: this.form.categoryId || undefined,
     };
     const current = this.editing();
     const req = current
@@ -223,6 +247,7 @@ export class ExpenseFormDialogComponent {
       tarjeta: '',
       noTarjeta: '',
       tipoMovimiento: '',
+      categoryId: null,
     };
   }
 

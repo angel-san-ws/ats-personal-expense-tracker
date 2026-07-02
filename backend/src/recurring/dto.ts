@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsPositive,
   IsString,
+  IsUUID,
   Matches,
   MaxLength,
   MinLength,
@@ -38,10 +39,10 @@ export class CreateRecurringExpenseDto {
   @Matches(/^\d{4}-\d{2}-\d{2}$/)
   startDate: string;
 
-  /** ISO date (yyyy-mm-dd) inclusive last occurrence bound */
+  /** ISO date (yyyy-mm-dd) inclusive last occurrence bound; empty = open-ended. */
   @IsOptional()
   @IsString()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @Matches(/^(\d{4}-\d{2}-\d{2})?$/)
   endDate?: string;
 
   @IsOptional()
@@ -52,6 +53,11 @@ export class CreateRecurringExpenseDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  /** Assigns the merchant's concept to this category (affects all its expenses). */
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string;
 }
 
 export class UpdateRecurringExpenseDto {
@@ -95,4 +101,9 @@ export class UpdateRecurringExpenseDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  /** Assigns the merchant's concept to this category (affects all its expenses). */
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string;
 }

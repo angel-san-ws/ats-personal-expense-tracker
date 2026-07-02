@@ -87,6 +87,15 @@
     "deletedCount": "{{count}} record(s) deleted",
     "recurringHint": "Generated automatically from a fixed expense"
   },
+  "categorySelect": {
+    "label": "Category",
+    "none": "No category",
+    "new": "New category",
+    "newPlaceholder": "New category name",
+    "auto": "Auto-assign category based on the merchant name",
+    "autoNone": "No category suggestion found for this merchant",
+    "hint": "The category applies to the merchant, so all expenses of this merchant get it."
+  },
   "recurring": {
     "title": "Fixed Expenses",
     "subtitle": "Recurring expenses (rent, subscriptions, insurance) generated automatically on schedule",

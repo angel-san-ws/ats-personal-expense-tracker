@@ -136,6 +136,46 @@ export class ConceptsService {
   }
 
   /**
+   * Suggest a category for a single merchant name without persisting
+   * anything (used by the record dialogs). Learned knowledge first,
+   * keyword rules as fallback — same precedence as autoCategorize.
+   */
+  async suggestForName(
+    userId: string,
+    name: string,
+  ): Promise<{
+    categoryId: string;
+    categoryName: string;
+    categoryColor: string;
+  } | null> {
+    const trimmed = name.trim();
+    if (!trimmed) return null;
+
+    const categories = await this.categories.find({ where: { userId } });
+    const byName = new Map(
+      categories.map((c) => [c.name.trim().toLowerCase(), c]),
+    );
+    const learned = await this.learnedCategoryByKey([merchantKey(trimmed)]);
+    const suggestions = [
+      learned.get(merchantKey(trimmed)),
+      suggestCategoryName(trimmed),
+    ];
+    for (const suggestion of suggestions) {
+      const category = suggestion
+        ? byName.get(suggestion.toLowerCase())
+        : undefined;
+      if (category) {
+        return {
+          categoryId: category.id,
+          categoryName: category.name,
+          categoryColor: category.color,
+        };
+      }
+    }
+    return null;
+  }
+
+  /**
    * Suggest and assign a category to uncategorized concepts. For each
    * merchant, learned knowledge (how users of this installation categorized
    * the same merchant, see MerchantCategoryStat) takes precedence; keyword

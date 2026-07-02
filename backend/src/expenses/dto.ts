@@ -63,6 +63,11 @@ export class CreateExpenseDto {
   @IsString()
   @MaxLength(80)
   tipoMovimiento?: string;
+
+  /** Assigns the merchant's concept to this category (affects all its expenses). */
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string;
 }
 
 export class UpdateExpenseDto {
@@ -102,6 +107,11 @@ export class UpdateExpenseDto {
   @IsString()
   @MaxLength(80)
   tipoMovimiento?: string;
+
+  /** Assigns the merchant's concept to this category (affects all its expenses). */
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string;
 }
 
 export class BatchDeleteExpensesDto {

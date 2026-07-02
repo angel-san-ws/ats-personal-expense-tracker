@@ -65,6 +65,8 @@ export interface ExpenseInput {
   tarjeta?: string;
   noTarjeta?: string;
   tipoMovimiento?: string;
+  /** Assigns the merchant's concept to this category (all its expenses). */
+  categoryId?: string;
 }
 
 export interface CurrencyTotal {
@@ -150,6 +152,9 @@ export interface RecurringExpense {
   nextRunDate: string;
   active: boolean;
   tarjeta: string | null;
+  categoryId: string | null;
+  categoryName: string | null;
+  categoryColor: string | null;
   generatedCount: number;
   lastGeneratedDate: string | null;
   createdAt: string;
@@ -165,6 +170,8 @@ export interface RecurringExpenseInput {
   endDate?: string;
   tarjeta?: string;
   active?: boolean;
+  /** Assigns the merchant's concept to this category (all its expenses). */
+  categoryId?: string;
 }
 
 export interface ImportBatch {

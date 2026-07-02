@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { CardModule } from 'primeng/card';
@@ -17,6 +17,7 @@ import { RecurringExpensesService } from '../../core/services/recurring-expenses
 import { ExpensesService } from '../../core/services/expenses.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { AtsCurrencyPipe } from '../../core/currency.pipe';
+import { CategorySelectComponent } from '../shared/category-select';
 import {
   RecurrenceFrequency,
   RecurringExpense,
@@ -43,6 +44,7 @@ import {
     TagModule,
     TooltipModule,
     AtsCurrencyPipe,
+    CategorySelectComponent,
   ],
   template: `
     <div *transloco="let t">
@@ -59,6 +61,7 @@ import {
           <ng-template #header>
             <tr>
               <th>{{ t('recurring.merchant') }}</th>
+              <th>{{ t('categorySelect.label') }}</th>
               <th class="text-right">{{ t('recurring.amount') }}</th>
               <th>{{ t('recurring.frequency') }}</th>
               <th>{{ t('recurring.nextRun') }}</th>
@@ -70,6 +73,16 @@ import {
           <ng-template #body let-r>
             <tr>
               <td class="font-medium">{{ r.comercio }}</td>
+              <td>
+                @if (r.categoryName) {
+                  <p-tag
+                    [value]="r.categoryName"
+                    [style]="{ background: r.categoryColor, color: textColor(r.categoryColor) }"
+                  />
+                } @else {
+                  <span class="text-color-secondary">{{ t('filters.uncategorized') }}</span>
+                }
+              </td>
               <td class="text-right">{{ r.valor | atsCurrency: r.currency }}</td>
               <td>{{ t('recurring.freq.' + r.frequency) }}</td>
               <td>{{ r.active ? r.nextRunDate : '—' }}</td>
@@ -94,7 +107,7 @@ import {
             </tr>
           </ng-template>
           <ng-template #emptymessage>
-            <tr><td colspan="7" class="text-center p-4 text-color-secondary">{{ t('recurring.empty') }}</td></tr>
+            <tr><td colspan="8" class="text-center p-4 text-color-secondary">{{ t('recurring.empty') }}</td></tr>
           </ng-template>
         </p-table>
       </p-card>
@@ -110,6 +123,11 @@ import {
             <label>{{ t('recurring.merchant') }} *</label>
             <input pInputText [(ngModel)]="form.comercio" class="w-full" />
           </div>
+
+          <app-category-select
+            [(categoryId)]="form.categoryId"
+            [merchant]="form.comercio"
+          />
 
           <div class="flex gap-2">
             <div class="flex flex-column gap-1 flex-1">
@@ -201,6 +219,9 @@ export class RecurringComponent implements OnInit {
   private messages = inject(MessageService);
   private transloco = inject(TranslocoService);
 
+  @ViewChild(CategorySelectComponent)
+  private categorySelect?: CategorySelectComponent;
+
   items = signal<RecurringExpense[]>([]);
   dialogVisible = false;
   saving = signal(false);
@@ -215,6 +236,7 @@ export class RecurringComponent implements OnInit {
     startDate: Date | null;
     endDate: Date | null;
     tarjeta: string;
+    categoryId: string | null;
   } = this.emptyForm();
 
   ngOnInit(): void {
@@ -236,6 +258,7 @@ export class RecurringComponent implements OnInit {
   openNew(): void {
     this.editing.set(null);
     this.form = this.emptyForm();
+    this.categorySelect?.reload();
     this.dialogVisible = true;
   }
 
@@ -249,7 +272,9 @@ export class RecurringComponent implements OnInit {
       startDate: this.parseIso(r.startDate),
       endDate: r.endDate ? this.parseIso(r.endDate) : null,
       tarjeta: r.tarjeta ?? '',
+      categoryId: r.categoryId,
     };
+    this.categorySelect?.reload();
     this.dialogVisible = true;
   }
 
@@ -273,6 +298,7 @@ export class RecurringComponent implements OnInit {
       startDate: this.toIso(this.form.startDate as Date),
       endDate: this.form.endDate ? this.toIso(this.form.endDate) : '',
       tarjeta: this.form.tarjeta.trim(),
+      categoryId: this.form.categoryId || undefined,
     };
     const current = this.editing();
     const req = current
@@ -365,6 +391,7 @@ export class RecurringComponent implements OnInit {
       startDate: new Date(),
       endDate: null,
       tarjeta: '',
+      categoryId: null,
     };
   }
 
@@ -379,6 +406,20 @@ export class RecurringComponent implements OnInit {
       ).sort();
       this.currencyOptions.set(merged);
     });
+  }
+
+  /** Text color with enough contrast for a category tag background. */
+  textColor(hex: string | null): string {
+    if (!hex) return '#ffffff';
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    if ([r, g, b].some((n) => isNaN(n))) return '#ffffff';
+    // Relative luminance (sRGB) — dark backgrounds get white text.
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.6 ? '#1f2937' : '#ffffff';
   }
 
   /** Format a local Date as yyyy-mm-dd (no UTC shift). */

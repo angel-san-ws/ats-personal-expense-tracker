@@ -6,6 +6,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThanOrEqual, Repository } from 'typeorm';
 import { Expense } from '../expenses/expense.entity';
+import { Concept } from '../concepts/concept.entity';
+import { Category } from '../categories/category.entity';
 import { ConceptsService } from '../concepts/concepts.service';
 import {
   RecurrenceFrequency,
@@ -32,6 +34,9 @@ export interface RecurringExpenseRow {
   nextRunDate: string;
   active: boolean;
   tarjeta: string | null;
+  categoryId: string | null;
+  categoryName: string | null;
+  categoryColor: string | null;
   generatedCount: number;
   lastGeneratedDate: string | null;
   createdAt: Date;
@@ -53,6 +58,23 @@ export class RecurringExpensesService {
     }
   }
 
+  /** Assign the merchant's concept to a category (creates the concept early). */
+  private async assignCategory(
+    userId: string,
+    comercio: string,
+    categoryId: string,
+  ): Promise<void> {
+    const { idByName } = await this.concepts.getOrCreateMany(
+      this.expenses.manager,
+      userId,
+      [comercio],
+    );
+    const conceptId = idByName.get(comercio);
+    if (conceptId) {
+      await this.concepts.assignCategory(userId, conceptId, { categoryId });
+    }
+  }
+
   async create(
     userId: string,
     dto: CreateRecurringExpenseDto,
@@ -71,7 +93,11 @@ export class RecurringExpensesService {
       active: dto.active ?? true,
       tarjeta: dto.tarjeta?.trim() || null,
     });
-    return this.recurring.save(entity);
+    const saved = await this.recurring.save(entity);
+    if (dto.categoryId) {
+      await this.assignCategory(userId, saved.comercio, dto.categoryId);
+    }
+    return saved;
   }
 
   /**
@@ -118,7 +144,11 @@ export class RecurringExpensesService {
         from,
       );
     }
-    return this.recurring.save(entity);
+    const saved = await this.recurring.save(entity);
+    if (dto.categoryId) {
+      await this.assignCategory(userId, saved.comercio, dto.categoryId);
+    }
+    return saved;
   }
 
   /** Delete a template. Generated expenses are kept (FK set to null). */
@@ -134,6 +164,9 @@ export class RecurringExpensesService {
     const rows = await this.recurring
       .createQueryBuilder('r')
       .leftJoin(Expense, 'e', 'e.recurring_expense_id = r.id')
+      // (user, name) is unique on concepts, so this join never multiplies rows.
+      .leftJoin(Concept, 'c', 'c.user_id = r.user_id AND c.name = r.comercio')
+      .leftJoin(Category, 'cat', 'cat.id = c.category_id')
       .select([
         'r.id AS id',
         'r.comercio AS comercio',
@@ -146,11 +179,17 @@ export class RecurringExpensesService {
         'r.active AS active',
         'r.tarjeta AS tarjeta',
         'r.created_at AS "createdAt"',
+        'c.category_id AS "categoryId"',
+        'cat.name AS "categoryName"',
+        'cat.color AS "categoryColor"',
       ])
       .addSelect('COUNT(e.id)', 'generatedCount')
       .addSelect('MAX(e.fecha)', 'lastGeneratedDate')
       .where('r.user_id = :userId', { userId })
       .groupBy('r.id')
+      .addGroupBy('c.category_id')
+      .addGroupBy('cat.name')
+      .addGroupBy('cat.color')
       .orderBy('r.created_at', 'DESC')
       .getRawMany();
 
@@ -170,6 +209,9 @@ export class RecurringExpensesService {
       nextRunDate: toIso(r.nextRunDate) as string,
       active: r.active === true || r.active === 'true',
       tarjeta: r.tarjeta,
+      categoryId: r.categoryId ?? null,
+      categoryName: r.categoryName ?? null,
+      categoryColor: r.categoryColor ?? null,
       generatedCount: parseInt(r.generatedCount, 10) || 0,
       lastGeneratedDate: toIso(r.lastGeneratedDate),
       createdAt: r.createdAt,

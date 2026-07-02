@@ -85,6 +85,11 @@ export class ExpensesService {
     const kind = (dto.kind ?? 'expense') as ExpenseKind;
     const comercio = dto.comercio.trim();
     const conceptId = await this.resolveConceptId(userId, kind, comercio);
+    if (dto.categoryId && conceptId) {
+      await this.concepts.assignCategory(userId, conceptId, {
+        categoryId: dto.categoryId,
+      });
+    }
     const expense = this.expenses.create({
       userId,
       fecha: dto.fecha,
@@ -131,6 +136,11 @@ export class ExpensesService {
           comercio,
         );
       }
+    }
+    if (dto.categoryId && expense.conceptId) {
+      await this.concepts.assignCategory(userId, expense.conceptId, {
+        categoryId: dto.categoryId,
+      });
     }
     return this.expenses.save(expense);
   }

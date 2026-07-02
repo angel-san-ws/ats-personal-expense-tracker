@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ConceptsService } from './concepts.service';
@@ -26,6 +27,16 @@ export class ConceptsController {
   @Post('auto-categorize')
   autoCategorize(@CurrentUser() user: AuthUser) {
     return this.concepts.autoCategorize(user.userId);
+  }
+
+  /** Category suggestion for a merchant name (nothing is persisted). */
+  @Get('suggest')
+  async suggest(@CurrentUser() user: AuthUser, @Query('name') name: string) {
+    const suggestion = await this.concepts.suggestForName(
+      user.userId,
+      name ?? '',
+    );
+    return { suggestion };
   }
 
   @Patch(':id/category')
