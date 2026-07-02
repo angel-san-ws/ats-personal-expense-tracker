@@ -11,7 +11,8 @@
     "categories": "Categories",
     "concepts": "Expense Concepts",
     "settings": "Settings",
-    "logout": "Log out"
+    "logout": "Log out",
+    "toggleTheme": "Toggle dark mode"
   },
   "auth": {
     "loginTitle": "Sign in",

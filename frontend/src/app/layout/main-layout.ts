@@ -10,9 +10,10 @@ import { MenuItem } from 'primeng/api';
 
 import { AuthService } from '../core/auth/auth.service';
 import { LanguageService } from '../core/i18n/language.service';
+import { ThemeService } from '../core/theme.service';
 import { UsersService } from '../core/services/users.service';
 import { RecurringExpensesService } from '../core/services/recurring-expenses.service';
-import { AppLanguage } from '../core/models';
+import { AppLanguage, AppTheme } from '../core/models';
 
 interface NavLink {
   label: string;
@@ -63,6 +64,14 @@ interface NavLink {
           }
         </nav>
 
+        <p-button
+          [text]="true"
+          [rounded]="true"
+          [icon]="theme.current() === 'dark' ? 'pi pi-sun' : 'pi pi-moon'"
+          (onClick)="toggleTheme()"
+          [ariaLabel]="t('nav.toggleTheme')"
+        />
+
         <p-select
           [options]="languages"
           [ngModel]="lang.current()"
@@ -96,6 +105,7 @@ interface NavLink {
 export class MainLayoutComponent implements OnInit {
   private auth = inject(AuthService);
   lang = inject(LanguageService);
+  theme = inject(ThemeService);
   private users = inject(UsersService);
   private transloco = inject(TranslocoService);
   private recurring = inject(RecurringExpensesService);
@@ -156,6 +166,16 @@ export class MainLayoutComponent implements OnInit {
     this.lang.use(value);
     // Persist to the user's profile (best effort).
     this.users.updateSettings({ language: value }).subscribe({
+      next: (user) => this.auth.setUser(user),
+      error: () => {},
+    });
+  }
+
+  toggleTheme(): void {
+    const next: AppTheme = this.theme.current() === 'dark' ? 'light' : 'dark';
+    this.theme.use(next);
+    // Persist to the user's profile (best effort).
+    this.users.updateSettings({ theme: next }).subscribe({
       next: (user) => this.auth.setUser(user),
       error: () => {},
     });
