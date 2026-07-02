@@ -18,6 +18,10 @@ export class UpdateSettingsDto {
   @IsString()
   @MaxLength(8)
   currency?: string;
+
+  @IsOptional()
+  @IsIn(['light', 'dark'])
+  theme?: 'light' | 'dark';
 }
 
 export class ChangePasswordDto {

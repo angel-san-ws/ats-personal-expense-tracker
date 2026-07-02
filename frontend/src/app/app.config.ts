@@ -17,6 +17,7 @@ import { routes } from './app.routes';
 import { authInterceptor } from './core/auth/auth.interceptor';
 import { AuthService } from './core/auth/auth.service';
 import { LanguageService } from './core/i18n/language.service';
+import { ThemeService } from './core/theme.service';
 import { TranslocoHttpLoader } from './core/i18n/transloco-loader';
 
 export const appConfig: ApplicationConfig = {
@@ -52,8 +53,10 @@ export const appConfig: ApplicationConfig = {
     }),
     provideAppInitializer(() => {
       const lang = inject(LanguageService);
+      const theme = inject(ThemeService);
       const auth = inject(AuthService);
       lang.init();
+      theme.init();
       if (auth.token) {
         return auth.loadMe().pipe(catchError(() => of(null)));
       }

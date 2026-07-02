@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE } from '../api.config';
-import { AppLanguage, User } from '../models';
+import { AppLanguage, AppTheme, User } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class UsersService {
@@ -15,6 +15,7 @@ export class UsersService {
   updateSettings(settings: {
     language?: AppLanguage;
     currency?: string;
+    theme?: AppTheme;
   }): Observable<User> {
     return this.http.patch<User>(`${API_BASE}/users/me/settings`, settings);
   }

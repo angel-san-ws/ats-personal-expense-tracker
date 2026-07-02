@@ -1,4 +1,5 @@
 export type AppLanguage = 'en' | 'es';
+export type AppTheme = 'light' | 'dark';
 
 export interface User {
   id: string;
@@ -6,6 +7,7 @@ export interface User {
   name: string;
   language: AppLanguage;
   currency: string;
+  theme: AppTheme;
   createdAt: string;
 }
 

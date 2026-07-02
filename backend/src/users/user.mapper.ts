@@ -6,6 +6,7 @@ export interface PublicUser {
   name: string;
   language: 'en' | 'es';
   currency: string;
+  theme: 'light' | 'dark';
   createdAt: Date;
 }
 
@@ -16,6 +17,7 @@ export function toPublicUser(user: User): PublicUser {
     name: user.name,
     language: user.language,
     currency: user.currency,
+    theme: user.theme,
     createdAt: user.createdAt,
   };
 }

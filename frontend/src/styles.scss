@@ -6,6 +6,11 @@
   --ats-bg: #f1f5f9;
 }
 
+/* Dark theme (PrimeNG darkModeSelector — toggled by ThemeService) */
+.app-dark {
+  --ats-bg: #0f172a;
+}
+
 * {
   box-sizing: border-box;
 }

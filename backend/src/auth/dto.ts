@@ -32,6 +32,11 @@ export class RegisterDto {
   @IsOptional()
   @IsIn(['en', 'es'])
   language?: 'en' | 'es';
+
+  /** Browser-detected theme, sent silently so the account matches what the user saw. */
+  @IsOptional()
+  @IsIn(['light', 'dark'])
+  theme?: 'light' | 'dark';
 }
 
 export class LoginDto {

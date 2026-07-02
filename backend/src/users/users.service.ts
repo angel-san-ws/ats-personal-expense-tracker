@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 
-import { AppLanguage, User } from './user.entity';
+import { AppLanguage, AppTheme, User } from './user.entity';
 import { Category } from '../categories/category.entity';
 import { ChangePasswordDto, UpdateProfileDto, UpdateSettingsDto } from './dto';
 import { defaultCategoriesFor } from '../common/default-categories';
@@ -36,6 +36,7 @@ export class UsersService {
     name: string,
     password: string,
     language: AppLanguage = 'en',
+    theme: AppTheme = 'light',
   ): Promise<User> {
     const normalized = email.toLowerCase().trim();
     const existing = await this.findByEmail(normalized);
@@ -47,6 +48,7 @@ export class UsersService {
       name: name.trim(),
       passwordHash,
       language,
+      theme,
     });
     const saved = await this.users.save(user);
     await this.seedDefaultCategories(saved.id, language);
@@ -73,6 +75,7 @@ export class UsersService {
     const user = await this.findById(userId);
     if (dto.language !== undefined) user.language = dto.language;
     if (dto.currency !== undefined) user.currency = dto.currency.trim().toUpperCase();
+    if (dto.theme !== undefined) user.theme = dto.theme;
     return this.users.save(user);
   }
 

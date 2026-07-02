@@ -5,6 +5,7 @@ import { Observable, tap } from 'rxjs';
 import { API_BASE } from '../api.config';
 import { AuthResult, AppLanguage, User } from '../models';
 import { LanguageService } from '../i18n/language.service';
+import { ThemeService } from '../theme.service';
 
 const TOKEN_KEY = 'ats_token';
 
@@ -13,6 +14,7 @@ export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
   private lang = inject(LanguageService);
+  private theme = inject(ThemeService);
 
   private _user = signal<User | null>(null);
   readonly user = this._user.asReadonly();
@@ -29,7 +31,14 @@ export class AuthService {
     language: AppLanguage,
   ): Observable<AuthResult> {
     return this.http
-      .post<AuthResult>(`${API_BASE}/auth/register`, { email, name, password, language })
+      .post<AuthResult>(`${API_BASE}/auth/register`, {
+        email,
+        name,
+        password,
+        language,
+        // Browser-detected theme, so the account starts with what the user saw.
+        theme: this.theme.current(),
+      })
       .pipe(tap((res) => this.setSession(res)));
   }
 
@@ -47,6 +56,7 @@ export class AuthService {
         tap((user) => {
           this._user.set(user);
           this.lang.use(user.language);
+          this.theme.use(user.theme);
         }),
       );
   }
@@ -64,7 +74,8 @@ export class AuthService {
   private setSession(res: AuthResult): void {
     localStorage.setItem(TOKEN_KEY, res.accessToken);
     this._user.set(res.user);
-    // The account's saved language wins over the browser-detected one.
+    // The account's saved language/theme win over the browser-detected ones.
     this.lang.use(res.user.language);
+    this.theme.use(res.user.theme);
   }
 }

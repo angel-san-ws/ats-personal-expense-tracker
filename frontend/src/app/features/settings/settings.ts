@@ -13,7 +13,8 @@ import { AuthService } from '../../core/auth/auth.service';
 import { PASSWORD_RULES, isStrongPassword } from '../../core/auth/password-policy';
 import { UsersService } from '../../core/services/users.service';
 import { LanguageService } from '../../core/i18n/language.service';
-import { AppLanguage } from '../../core/models';
+import { ThemeService } from '../../core/theme.service';
+import { AppLanguage, AppTheme } from '../../core/models';
 
 @Component({
   selector: 'app-settings',
@@ -67,6 +68,16 @@ import { AppLanguage } from '../../core/models';
                 <p-select
                   [(ngModel)]="language"
                   [options]="languageOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  styleClass="w-full"
+                />
+              </div>
+              <div class="flex flex-column gap-1">
+                <label>{{ t('settings.theme') }}</label>
+                <p-select
+                  [(ngModel)]="theme"
+                  [options]="themeOptions()"
                   optionLabel="label"
                   optionValue="value"
                   styleClass="w-full"
@@ -146,12 +157,14 @@ export class SettingsComponent implements OnInit {
   auth = inject(AuthService);
   private users = inject(UsersService);
   private lang = inject(LanguageService);
+  private themes = inject(ThemeService);
   private messages = inject(MessageService);
   private transloco = inject(TranslocoService);
 
   name = '';
   language: AppLanguage = 'en';
   currency = 'GTQ';
+  theme: AppTheme = 'light';
   currentPassword = '';
   newPassword = '';
   confirmPassword = '';
@@ -174,12 +187,18 @@ export class SettingsComponent implements OnInit {
     { label: this.transloco.translate('settings.spanish'), value: 'es' },
   ]);
 
+  themeOptions = signal([
+    { label: this.transloco.translate('settings.light'), value: 'light' },
+    { label: this.transloco.translate('settings.dark'), value: 'dark' },
+  ]);
+
   ngOnInit(): void {
     const user = this.auth.user();
     if (user) {
       this.name = user.name;
       this.language = user.language;
       this.currency = user.currency;
+      this.theme = user.theme;
     }
   }
 
@@ -215,11 +234,16 @@ export class SettingsComponent implements OnInit {
   savePreferences(): void {
     this.savingPrefs.set(true);
     this.users
-      .updateSettings({ language: this.language, currency: this.currency })
+      .updateSettings({
+        language: this.language,
+        currency: this.currency,
+        theme: this.theme,
+      })
       .subscribe({
         next: (user) => {
           this.auth.setUser(user);
           this.lang.use(this.language);
+          this.themes.use(this.theme);
           this.savingPrefs.set(false);
           this.messages.add({
             severity: 'success',

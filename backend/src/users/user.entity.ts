@@ -12,6 +12,7 @@ import { Expense } from '../expenses/expense.entity';
 import { ImportBatch } from '../import/import-batch.entity';
 
 export type AppLanguage = 'en' | 'es';
+export type AppTheme = 'light' | 'dark';
 
 @Entity('users')
 export class User {
@@ -32,6 +33,9 @@ export class User {
 
   @Column({ type: 'varchar', length: 8, default: 'GTQ' })
   currency: string;
+
+  @Column({ type: 'varchar', length: 8, default: 'light' })
+  theme: AppTheme;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

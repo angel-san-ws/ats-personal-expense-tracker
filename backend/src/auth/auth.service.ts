@@ -24,6 +24,7 @@ export class AuthService {
       dto.name,
       dto.password,
       dto.language,
+      dto.theme,
     );
     return this.buildResult(user.id, user.email, toPublicUser(user));
   }

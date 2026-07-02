@@ -8,6 +8,7 @@ import { ChartModule } from 'primeng/chart';
 import { FilterBarComponent } from '../shared/filter-bar';
 import { AtsCurrencyPipe } from '../../core/currency.pipe';
 import { ExpensesService } from '../../core/services/expenses.service';
+import { ThemeService } from '../../core/theme.service';
 import { DashboardSummary, ExpenseQuery } from '../../core/models';
 
 @Component({
@@ -77,7 +78,7 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
                 <p-chart
                   type="doughnut"
                   [data]="categoryChart()"
-                  [options]="pieOptions"
+                  [options]="pieOptions()"
                   height="20rem"
                   (onDataSelect)="onCategorySelect($event)"
                 />
@@ -86,21 +87,21 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
             <div class="col-12 lg:col-7">
               @if (useComparisonChart()) {
                 <p-card [header]="t('dashboard.vsPrevious')">
-                  <p-chart type="bar" [data]="comparisonChart()" [options]="barOptions" height="20rem" />
+                  <p-chart type="bar" [data]="comparisonChart()" [options]="barOptions()" height="20rem" />
                 </p-card>
               } @else if (useCumulativeChart()) {
                 <p-card [header]="t('dashboard.cumulative')">
-                  <p-chart type="line" [data]="cumulativeChart()" [options]="barOptions" height="20rem" />
+                  <p-chart type="line" [data]="cumulativeChart()" [options]="barOptions()" height="20rem" />
                 </p-card>
               } @else {
                 <p-card [header]="t('dashboard.overTime')">
-                  <p-chart type="bar" [data]="monthChart()" [options]="barOptions" height="20rem" />
+                  <p-chart type="bar" [data]="monthChart()" [options]="barOptions()" height="20rem" />
                 </p-card>
               }
             </div>
             <div class="col-12 lg:col-6">
               <p-card [header]="t('dashboard.byCard')">
-                <p-chart type="bar" [data]="cardChart()" [options]="barOptions" height="18rem" />
+                <p-chart type="bar" [data]="cardChart()" [options]="barOptions()" height="18rem" />
               </p-card>
             </div>
             <div class="col-12 lg:col-6">
@@ -108,7 +109,7 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
                 <p-chart
                   type="bar"
                   [data]="merchantChart()"
-                  [options]="horizontalBarOptions"
+                  [options]="horizontalBarOptions()"
                   height="18rem"
                   (onDataSelect)="onMerchantSelect($event)"
                 />
@@ -124,6 +125,7 @@ export class DashboardComponent {
   private expenses = inject(ExpensesService);
   private transloco = inject(TranslocoService);
   private router = inject(Router);
+  private theme = inject(ThemeService);
 
   private query = signal<ExpenseQuery>({});
   summary = signal<DashboardSummary | null>(null);
@@ -142,23 +144,56 @@ export class DashboardComponent {
     if (target) target.style.cursor = elements.length ? 'pointer' : 'default';
   };
 
-  pieOptions = {
-    plugins: { legend: { position: 'bottom' } },
+  /** Chart.js can't read CSS variables, so resolve the PrimeNG tokens per theme. */
+  private chartColors = computed(() => {
+    this.theme.current(); // recompute when the theme changes
+    const style = getComputedStyle(document.documentElement);
+    return {
+      text: style.getPropertyValue('--p-text-color').trim(),
+      muted: style.getPropertyValue('--p-text-muted-color').trim(),
+      grid: style.getPropertyValue('--p-content-border-color').trim(),
+    };
+  });
+
+  pieOptions = computed(() => ({
+    plugins: {
+      legend: { position: 'bottom', labels: { color: this.chartColors().text } },
+    },
     maintainAspectRatio: false,
     onHover: this.hoverCursor,
-  };
-  barOptions = {
+  }));
+  barOptions = computed(() => ({
     plugins: { legend: { display: false } },
     maintainAspectRatio: false,
-    scales: { y: { beginAtZero: true } },
-  };
-  horizontalBarOptions = {
+    scales: {
+      x: {
+        ticks: { color: this.chartColors().muted },
+        grid: { color: this.chartColors().grid },
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { color: this.chartColors().muted },
+        grid: { color: this.chartColors().grid },
+      },
+    },
+  }));
+  horizontalBarOptions = computed(() => ({
     indexAxis: 'y',
     plugins: { legend: { display: false } },
     maintainAspectRatio: false,
-    scales: { x: { beginAtZero: true } },
+    scales: {
+      x: {
+        beginAtZero: true,
+        ticks: { color: this.chartColors().muted },
+        grid: { color: this.chartColors().grid },
+      },
+      y: {
+        ticks: { color: this.chartColors().muted },
+        grid: { color: this.chartColors().grid },
+      },
+    },
     onHover: this.hoverCursor,
-  };
+  }));
 
   categoryChart = computed(() => {
     const s = this.summary();
