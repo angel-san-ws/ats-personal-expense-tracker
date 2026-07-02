@@ -22,3 +22,7 @@ Thumbs.db
 
 # test artifacts
 .playwright-mcp/
+
+# local startup script
+run.ps1
+run-info.txt

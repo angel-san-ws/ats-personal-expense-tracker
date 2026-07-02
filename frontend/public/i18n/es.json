@@ -98,6 +98,7 @@
     "none": "Sin categoría",
     "new": "Nueva categoría",
     "newPlaceholder": "Nombre de la nueva categoría",
+    "color": "Color de la categoría",
     "auto": "Asignar categoría automáticamente según el nombre del comercio",
     "autoNone": "No se encontró una sugerencia de categoría para este comercio",
     "hint": "La categoría se aplica al comercio, así que todos los gastos de este comercio la reciben."

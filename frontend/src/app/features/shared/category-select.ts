@@ -5,6 +5,7 @@ import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
+import { ColorPickerModule } from 'primeng/colorpicker';
 import { MessageService } from 'primeng/api';
 
 import { CategoriesService } from '../../core/services/categories.service';
@@ -25,6 +26,7 @@ import { Category } from '../../core/models';
     InputTextModule,
     ButtonModule,
     TooltipModule,
+    ColorPickerModule,
   ],
   template: `
     <ng-container *transloco="let t">
@@ -74,7 +76,7 @@ import { Category } from '../../core/models';
             [text]="true"
             [rounded]="true"
             [pTooltip]="t('categorySelect.new')"
-            (onClick)="creating.set(!creating())"
+            (onClick)="toggleCreate()"
           />
         </div>
         @if (creating()) {
@@ -86,6 +88,11 @@ import { Category } from '../../core/models';
               [placeholder]="t('categorySelect.newPlaceholder')"
               (keyup.enter)="createCategory()"
             />
+            <p-colorpicker
+              [(ngModel)]="newColor"
+              appendTo="body"
+              [pTooltip]="t('categorySelect.color')"
+            />
             <p-button
               icon="pi pi-check"
               [text]="true"
@@ -94,6 +101,20 @@ import { Category } from '../../core/models';
               [loading]="busy()"
               (onClick)="createCategory()"
             />
+          </div>
+          <div class="flex flex-wrap gap-2 mt-1">
+            @for (preset of presets; track preset) {
+              <button
+                type="button"
+                class="p-0 border-none cursor-pointer border-round"
+                [style.background]="preset"
+                [style.width.rem]="1.25"
+                [style.height.rem]="1.25"
+                [style.outline]="colorValue().toLowerCase() === preset ? '2px solid var(--p-primary-color)' : 'none'"
+                [style.outlineOffset.px]="2"
+                (click)="newColor = preset.replace('#', '')"
+              ></button>
+            }
           </div>
         }
         <small class="text-color-secondary">{{ t('categorySelect.hint') }}</small>
@@ -118,9 +139,11 @@ export class CategorySelectComponent implements OnInit {
   busy = signal(false);
   suggesting = signal(false);
   newName = '';
+  /** PrimeNG ColorPicker stores hex without '#'. */
+  newColor = '6366f1';
 
-  // Same palette as the Categories page; new categories rotate through it.
-  private readonly presets = [
+  // Same palette as the Categories page; the default color rotates through it.
+  readonly presets = [
     '#ef4444', '#f59e0b', '#eab308', '#22c55e', '#14b8a6',
     '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#64748b',
   ];
@@ -132,6 +155,20 @@ export class CategorySelectComponent implements OnInit {
   /** Parents call this when their dialog opens so the list is fresh. */
   reload(): void {
     this.categoriesSvc.list().subscribe((c) => this.categories.set(c));
+  }
+
+  /** Hex color with '#', as the API and swatches expect it. */
+  colorValue(): string {
+    const c = this.newColor || '6366f1';
+    return c.startsWith('#') ? c : `#${c}`;
+  }
+
+  toggleCreate(): void {
+    if (!this.creating()) {
+      const preset = this.presets[this.categories().length % this.presets.length];
+      this.newColor = preset.replace('#', '');
+    }
+    this.creating.set(!this.creating());
   }
 
   /** Suggest a category for the merchant (learned + keyword rules). */
@@ -165,9 +202,8 @@ export class CategorySelectComponent implements OnInit {
   createCategory(): void {
     const name = this.newName.trim();
     if (!name || this.busy()) return;
-    const color = this.presets[this.categories().length % this.presets.length];
     this.busy.set(true);
-    this.categoriesSvc.create(name, color).subscribe({
+    this.categoriesSvc.create(name, this.colorValue()).subscribe({
       next: (cat) => {
         this.busy.set(false);
         this.creating.set(false);

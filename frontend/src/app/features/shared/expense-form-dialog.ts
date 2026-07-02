@@ -46,6 +46,7 @@ import { CategorySelectComponent } from './category-select';
         [modal]="true"
         [style]="{ width: '28rem' }"
         [header]="t(headerKey())"
+        [focusOnShow]="false"
       >
         <div class="flex flex-column gap-3 pt-2">
           <div class="flex flex-column gap-1">
