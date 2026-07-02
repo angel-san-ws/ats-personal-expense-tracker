@@ -42,6 +42,13 @@ export const routes: Routes = [
           import('./features/import/import').then((m) => m.ImportComponent),
       },
       {
+        path: 'recurring',
+        loadComponent: () =>
+          import('./features/recurring/recurring').then(
+            (m) => m.RecurringComponent,
+          ),
+      },
+      {
         path: 'categories',
         loadComponent: () =>
           import('./features/categories/categories').then(

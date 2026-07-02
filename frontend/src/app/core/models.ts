@@ -52,6 +52,7 @@ export interface Expense {
   categoryId: string | null;
   categoryName: string | null;
   categoryColor: string | null;
+  recurringExpenseId: string | null;
 }
 
 /** Payload for manually creating/editing an expense or payment. */
@@ -133,6 +134,37 @@ export interface ImportResult {
     statementDate: string | null;
     paymentDueDate: string | null;
   };
+}
+
+export type RecurrenceFrequency = 'weekly' | 'biweekly' | 'monthly' | 'yearly';
+
+/** Fixed/recurring expense template; real expenses are generated from it. */
+export interface RecurringExpense {
+  id: string;
+  comercio: string;
+  valor: number;
+  currency: string;
+  frequency: RecurrenceFrequency;
+  startDate: string;
+  endDate: string | null;
+  nextRunDate: string;
+  active: boolean;
+  tarjeta: string | null;
+  generatedCount: number;
+  lastGeneratedDate: string | null;
+  createdAt: string;
+}
+
+export interface RecurringExpenseInput {
+  comercio: string;
+  valor: number;
+  currency?: string;
+  frequency: RecurrenceFrequency;
+  startDate: string;
+  /** Empty string clears the end date (open-ended). */
+  endDate?: string;
+  tarjeta?: string;
+  active?: boolean;
 }
 
 export interface ImportBatch {

@@ -125,7 +125,15 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
               <td>{{ e.tarjeta || '—' }}</td>
               <td>{{ e.noTarjeta || '—' }}</td>
               <td>{{ e.tipoMovimiento || '—' }}</td>
-              <td class="font-medium">{{ e.comercio }}</td>
+              <td class="font-medium">
+                {{ e.comercio }}
+                @if (e.recurringExpenseId) {
+                  <i
+                    class="pi pi-sync text-xs text-color-secondary ml-1"
+                    [pTooltip]="t('expenses.recurringHint')"
+                  ></i>
+                }
+              </td>
               <td>
                 @if (e.categoryName) {
                   <p-tag

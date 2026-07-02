@@ -23,6 +23,7 @@ export interface ExpenseRow {
   categoryId: string | null;
   categoryName: string | null;
   categoryColor: string | null;
+  recurringExpenseId: string | null;
 }
 
 export interface CurrencyTotal {
@@ -229,6 +230,7 @@ export class ExpensesService {
         'e.excluded AS excluded',
         'e.currency AS currency',
         'e.concept_id AS "conceptId"',
+        'e.recurring_expense_id AS "recurringExpenseId"',
         'concept.category_id AS "categoryId"',
         'category.name AS "categoryName"',
         'category.color AS "categoryColor"',
@@ -260,6 +262,7 @@ export class ExpensesService {
       excluded: r.excluded === true || r.excluded === 'true',
       currency: r.currency,
       conceptId: r.conceptId ?? null,
+      recurringExpenseId: r.recurringExpenseId ?? null,
       categoryId: r.categoryId ?? null,
       categoryName: r.categoryName ?? null,
       categoryColor: r.categoryColor ?? null,

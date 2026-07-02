@@ -8,6 +8,7 @@ import { Concept } from './concepts/concept.entity';
 import { MerchantCategoryStat } from './concepts/merchant-category-stat.entity';
 import { Expense } from './expenses/expense.entity';
 import { ImportBatch } from './import/import-batch.entity';
+import { RecurringExpense } from './recurring/recurring-expense.entity';
 
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -15,6 +16,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { ConceptsModule } from './concepts/concepts.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { ImportModule } from './import/import.module';
+import { RecurringExpensesModule } from './recurring/recurring-expenses.module';
 
 @Module({
   imports: [
@@ -35,6 +37,7 @@ import { ImportModule } from './import/import.module';
           MerchantCategoryStat,
           Expense,
           ImportBatch,
+          RecurringExpense,
         ],
         // Auto-create schema for local dev. Use migrations in production.
         synchronize: true,
@@ -47,6 +50,7 @@ import { ImportModule } from './import/import.module';
     ConceptsModule,
     ExpensesModule,
     ImportModule,
+    RecurringExpensesModule,
   ],
 })
 export class AppModule {}

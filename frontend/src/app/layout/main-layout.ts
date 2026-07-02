@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -11,6 +11,7 @@ import { MenuItem } from 'primeng/api';
 import { AuthService } from '../core/auth/auth.service';
 import { LanguageService } from '../core/i18n/language.service';
 import { UsersService } from '../core/services/users.service';
+import { RecurringExpensesService } from '../core/services/recurring-expenses.service';
 import { AppLanguage } from '../core/models';
 
 interface NavLink {
@@ -92,11 +93,12 @@ interface NavLink {
   `,
   standalone: true,
 })
-export class MainLayoutComponent {
+export class MainLayoutComponent implements OnInit {
   private auth = inject(AuthService);
   lang = inject(LanguageService);
   private users = inject(UsersService);
   private transloco = inject(TranslocoService);
+  private recurring = inject(RecurringExpensesService);
 
   languages = [
     { label: 'English', value: 'en' as AppLanguage },
@@ -107,10 +109,16 @@ export class MainLayoutComponent {
     { label: 'nav.dashboard', icon: 'pi pi-chart-bar', path: '/dashboard' },
     { label: 'nav.expenses', icon: 'pi pi-list', path: '/expenses' },
     { label: 'nav.payments', icon: 'pi pi-credit-card', path: '/payments' },
+    { label: 'nav.recurring', icon: 'pi pi-sync', path: '/recurring' },
     { label: 'nav.import', icon: 'pi pi-upload', path: '/import' },
     { label: 'nav.categories', icon: 'pi pi-tags', path: '/categories' },
     { label: 'nav.concepts', icon: 'pi pi-sitemap', path: '/concepts' },
   ]);
+
+  ngOnInit(): void {
+    // Lazy catch-up: generate any recurring expenses due since the last visit.
+    this.recurring.generate().subscribe({ error: () => {} });
+  }
 
   initials = computed(() => {
     const name = this.auth.user()?.name ?? '?';

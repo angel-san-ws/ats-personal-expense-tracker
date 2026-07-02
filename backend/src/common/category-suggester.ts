@@ -33,7 +33,8 @@ const RULES: SuggestionRule[] = [
       'TACO', 'SUBWAY', 'WENDY', 'DUNKIN', 'DOMINO', 'LITTLE CAESARS',
       'PANADERIA', 'PASTELERIA', 'BAKERY', 'SUSHI', 'CHURRASCO', 'ANTOJITOS',
       'COMEDOR', 'DESAYUNO', 'ALMUERZO', 'CHICKEN', 'POLLO', 'HELADOS',
-      'SARITA', 'POPS', 'GRILL', 'BISTRO', 'STEAK',
+      'SARITA', 'POPS', 'GRILL', 'BISTRO', 'STEAK', 'SAN MARTIN',
+      'LOS CEBOLLINES', 'CEBOLLINES', 'CARL S JR', 'CARLS JR', 'QUIZNOS',
     ],
     words: ['CAFE', 'REST', 'KFC', 'IHOP', 'FOOD'],
   },
@@ -43,7 +44,8 @@ const RULES: SuggestionRule[] = [
       'WALMART', 'WAL MART', 'SUPERMERCADO', 'MINISUPER', 'MINI SUPER', 'LA TORRE',
       'PAIZ', 'DESPENSA', 'ECONOSUPER', 'PRICESMART', 'COSTCO',
       'ABARROTES', 'ABARROTERIA', 'CARNICERIA', 'VERDULERIA', 'FRUTERIA',
-      'MERCADO', 'GROCERY', 'TIENDA DE CONVENIENCIA',
+      'MERCADO', 'GROCERY', 'TIENDA DE CONVENIENCIA', 'LA BARATA',
+      'LA CASITA',
     ],
     words: ['SUPER'],
   },
@@ -78,7 +80,8 @@ const RULES: SuggestionRule[] = [
     category: 'Health',
     substrings: [
       'FARMACIA', 'FARMACIAS', 'PHARMACY', 'GALENO', 'CRUZ VERDE', 'BATRES',
-      'MEIKOS', 'HOSPITAL', 'CLINICA', 'LABORATORIO', 'SANATORIO', 'MEDIC',
+      'MEIKOS', 'MEYKOS', 'DEL AHORRO', 'FARMAVALUE', 'FARMA VALUE',
+      'AVE FENIX', 'HOSPITAL', 'CLINICA', 'LABORATORIO', 'SANATORIO', 'MEDIC',
       'DENTAL', 'DENTISTA', 'OPTICA', 'OFTALMOLOG', 'PEDIATR', 'DOCTOR',
       'GIMNASIO', 'FITNESS', 'SMART FIT', 'SMARTFIT',
     ],
@@ -99,7 +102,7 @@ const RULES: SuggestionRule[] = [
     substrings: [
       'COLEGIO', 'UNIVERSIDAD', 'ESCUELA', 'ACADEMIA', 'INSTITUTO',
       'LIBRERIA', 'UDEMY', 'COURSERA', 'PLATZI', 'DUOLINGO', 'KUMON',
-      'TUITION', 'COLEGIATURA', 'CURSO',
+      'TUITION', 'COLEGIATURA', 'CURSO', 'ARTEMIS', 'SOPHOS', 'EDINTER',
     ],
   },
   {

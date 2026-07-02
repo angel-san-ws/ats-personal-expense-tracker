@@ -10,6 +10,7 @@ import {
 import { User } from '../users/user.entity';
 import { Concept } from '../concepts/concept.entity';
 import { ImportBatch } from '../import/import-batch.entity';
+import { RecurringExpense } from '../recurring/recurring-expense.entity';
 import { decimalTransformer } from '../common/decimal.transformer';
 
 export type ExpenseKind = 'expense' | 'payment';
@@ -111,6 +112,17 @@ export class Expense {
 
   @Column({ name: 'import_batch_id', type: 'uuid', nullable: true })
   importBatchId: string | null;
+
+  /** Set when this row was generated from a recurring expense template. */
+  @ManyToOne(() => RecurringExpense, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'recurring_expense_id' })
+  recurringExpense: RecurringExpense | null;
+
+  @Column({ name: 'recurring_expense_id', type: 'uuid', nullable: true })
+  recurringExpenseId: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
