@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -161,6 +162,7 @@ export class FilterBarComponent implements OnInit {
   private expensesSvc = inject(ExpensesService);
   private categoriesSvc = inject(CategoriesService);
   private conceptsSvc = inject(ConceptsService);
+  private route = inject(ActivatedRoute);
 
   /** When set, filter state is kept in sessionStorage under this key and restored on init. */
   @Input() persistKey: string | null = null;
@@ -214,7 +216,28 @@ export class FilterBarComponent implements OnInit {
       ),
     );
     this.restore();
+    this.applyQueryParams();
     this.apply();
+  }
+
+  /**
+   * Filters passed in the URL (e.g. from a dashboard chart click) override
+   * any restored state.
+   */
+  private applyQueryParams(): void {
+    const p = this.route.snapshot.queryParamMap;
+    const dateFrom = p.get('dateFrom');
+    const dateTo = p.get('dateTo');
+    if (dateFrom || dateTo) {
+      this.period = 'custom';
+      this.dateFrom = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
+      this.dateTo = dateTo ? new Date(`${dateTo}T00:00:00`) : null;
+    }
+    this.card = p.get('card') ?? this.card;
+    this.currency = p.get('currency') ?? this.currency;
+    this.category = p.get('category') ?? this.category;
+    this.concept = p.get('concept') ?? this.concept;
+    this.search = p.get('search') ?? this.search;
   }
 
   private get storageKey(): string {

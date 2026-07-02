@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { CardModule } from 'primeng/card';
@@ -73,7 +74,13 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
           <div class="grid">
             <div class="col-12 lg:col-5">
               <p-card [header]="t('dashboard.byCategory')">
-                <p-chart type="doughnut" [data]="categoryChart()" [options]="pieOptions" height="20rem" />
+                <p-chart
+                  type="doughnut"
+                  [data]="categoryChart()"
+                  [options]="pieOptions"
+                  height="20rem"
+                  (onDataSelect)="onCategorySelect($event)"
+                />
               </p-card>
             </div>
             <div class="col-12 lg:col-7">
@@ -98,7 +105,13 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
             </div>
             <div class="col-12 lg:col-6">
               <p-card [header]="t('dashboard.topMerchants')">
-                <p-chart type="bar" [data]="merchantChart()" [options]="horizontalBarOptions" height="18rem" />
+                <p-chart
+                  type="bar"
+                  [data]="merchantChart()"
+                  [options]="horizontalBarOptions"
+                  height="18rem"
+                  (onDataSelect)="onMerchantSelect($event)"
+                />
               </p-card>
             </div>
           </div>
@@ -110,6 +123,7 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
 export class DashboardComponent {
   private expenses = inject(ExpensesService);
   private transloco = inject(TranslocoService);
+  private router = inject(Router);
 
   private query = signal<ExpenseQuery>({});
   summary = signal<DashboardSummary | null>(null);
@@ -123,9 +137,15 @@ export class DashboardComponent {
     '#ec4899', '#14b8a6', '#ef4444', '#64748b', '#84cc16',
   ];
 
+  private hoverCursor = (event: { native: Event }, elements: unknown[]) => {
+    const target = event.native?.target as HTMLElement | null;
+    if (target) target.style.cursor = elements.length ? 'pointer' : 'default';
+  };
+
   pieOptions = {
     plugins: { legend: { position: 'bottom' } },
     maintainAspectRatio: false,
+    onHover: this.hoverCursor,
   };
   barOptions = {
     plugins: { legend: { display: false } },
@@ -137,6 +157,7 @@ export class DashboardComponent {
     plugins: { legend: { display: false } },
     maintainAspectRatio: false,
     scales: { x: { beginAtZero: true } },
+    onHover: this.hoverCursor,
   };
 
   categoryChart = computed(() => {
@@ -282,6 +303,43 @@ export class DashboardComponent {
       ],
     };
   });
+
+  /** Drill down: open the expenses list filtered by the clicked slice's category. */
+  onCategorySelect(event: { element?: { index: number } }): void {
+    const cat = this.clickedItem(event, this.summary()?.byCategory);
+    if (cat) this.drillDown({ category: cat.categoryId ?? 'none' });
+  }
+
+  /** Drill down: open the expenses list filtered by the clicked bar's merchant. */
+  onMerchantSelect(event: { element?: { index: number } }): void {
+    const merchant = this.clickedItem(event, this.summary()?.topMerchants);
+    if (merchant) this.drillDown({ search: merchant.comercio });
+  }
+
+  private clickedItem<T>(
+    event: { element?: { index: number } },
+    items: T[] | undefined,
+  ): T | undefined {
+    const index = event.element?.index;
+    return index == null ? undefined : items?.[index];
+  }
+
+  /** Navigate to the expenses list carrying the dashboard's filters plus the clicked value. */
+  private drillDown(overrides: Record<string, string | undefined>): void {
+    const q = this.query();
+    this.router.navigate(['/expenses'], {
+      queryParams: {
+        dateFrom: q.dateFrom,
+        dateTo: q.dateTo,
+        card: q.card,
+        currency: q.currency,
+        concept: q.conceptId,
+        search: q.search,
+        category: q.categoryId ?? (q.categoryFilter === 'none' ? 'none' : undefined),
+        ...overrides,
+      },
+    });
+  }
 
   onFilters(query: ExpenseQuery): void {
     this.query.set(query);
