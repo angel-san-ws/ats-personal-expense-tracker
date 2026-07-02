@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -162,6 +162,9 @@ export class FilterBarComponent implements OnInit {
   private categoriesSvc = inject(CategoriesService);
   private conceptsSvc = inject(ConceptsService);
 
+  /** When set, filter state is kept in sessionStorage under this key and restored on init. */
+  @Input() persistKey: string | null = null;
+
   @Output() filtersChange = new EventEmitter<ExpenseQuery>();
 
   period = 'custom';
@@ -210,7 +213,56 @@ export class FilterBarComponent implements OnInit {
         concepts.map((c) => ({ label: c.name, value: c.id })),
       ),
     );
+    this.restore();
     this.apply();
+  }
+
+  private get storageKey(): string {
+    return `ats-filters:${this.persistKey}`;
+  }
+
+  private restore(): void {
+    if (!this.persistKey) return;
+    const raw = sessionStorage.getItem(this.storageKey);
+    if (!raw) return;
+    try {
+      const s = JSON.parse(raw);
+      this.period = s.period ?? 'custom';
+      if (this.period !== 'custom') {
+        // Named presets are relative to today, so recompute instead of
+        // restoring dates that may have gone stale.
+        const range = this.computeRange(this.period);
+        this.dateFrom = range.from;
+        this.dateTo = range.to;
+      } else {
+        this.dateFrom = s.dateFrom ? new Date(`${s.dateFrom}T00:00:00`) : null;
+        this.dateTo = s.dateTo ? new Date(`${s.dateTo}T00:00:00`) : null;
+      }
+      this.card = s.card ?? null;
+      this.currency = s.currency ?? null;
+      this.category = s.category ?? null;
+      this.concept = s.concept ?? null;
+      this.search = s.search ?? '';
+    } catch {
+      sessionStorage.removeItem(this.storageKey);
+    }
+  }
+
+  private persist(): void {
+    if (!this.persistKey) return;
+    sessionStorage.setItem(
+      this.storageKey,
+      JSON.stringify({
+        period: this.period,
+        dateFrom: this.toIso(this.dateFrom),
+        dateTo: this.toIso(this.dateTo),
+        card: this.card,
+        currency: this.currency,
+        category: this.category,
+        concept: this.concept,
+        search: this.search,
+      }),
+    );
   }
 
   onPeriodChange(value: string): void {
@@ -287,6 +339,7 @@ export class FilterBarComponent implements OnInit {
   }
 
   apply(): void {
+    this.persist();
     this.filtersChange.emit(this.buildQuery());
   }
 

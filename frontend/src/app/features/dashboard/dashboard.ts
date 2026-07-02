@@ -23,7 +23,7 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
         <h1>{{ t('dashboard.title') }}</h1>
       </div>
 
-      <app-filter-bar (filtersChange)="onFilters($event)" />
+      <app-filter-bar persistKey="dashboard" (filtersChange)="onFilters($event)" />
 
       @if (summary(); as s) {
         <div class="grid mb-2">
