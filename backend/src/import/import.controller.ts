@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   Get,
@@ -30,6 +31,7 @@ export class ImportController {
   upload(
     @CurrentUser() user: AuthUser,
     @UploadedFile() file: Express.Multer.File,
+    @Body('suggestCategories') suggestCategories?: string,
   ) {
     if (!file) {
       throw new BadRequestException('No file was uploaded (field name: "file").');
@@ -44,6 +46,7 @@ export class ImportController {
       user.userId,
       file.originalname,
       file.buffer,
+      suggestCategories === 'true' || suggestCategories === '1',
     );
   }
 

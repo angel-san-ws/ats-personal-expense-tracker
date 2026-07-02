@@ -40,6 +40,8 @@ export interface ImportResult {
   duplicatesSkipped: number;
   totalRows: number;
   newConcepts: number;
+  /** Concepts auto-assigned a category from the merchant name (0 when the option is off). */
+  autoCategorized: number;
   metadata: {
     cardholderName: string | null;
     cardNumber: string | null;
@@ -66,6 +68,7 @@ export class ImportService {
     userId: string,
     filename: string,
     buffer: Buffer,
+    suggestCategories = false,
   ): Promise<ImportResult> {
     let parsed;
     try {
@@ -139,6 +142,7 @@ export class ImportService {
           duplicatesSkipped,
           totalRows,
           newConcepts: 0,
+          autoCategorized: 0,
           metadata: parsed.metadata,
         };
       }
@@ -165,6 +169,15 @@ export class ImportService {
         freshRows.filter((r) => r.kind === 'expense').map((r) => r.comercio),
       );
 
+      const autoCategorized = suggestCategories
+        ? (
+            await this.concepts.autoCategorize(userId, {
+              manager,
+              conceptIds: [...idByName.values()],
+            })
+          ).assigned
+        : 0;
+
       const expenses = freshRows.map((r) =>
         manager.create(Expense, {
           userId,
@@ -188,7 +201,8 @@ export class ImportService {
 
       this.logger.log(
         `Imported ${expenses.length} expenses for user ${userId} ` +
-          `(${createdNames.length} new concepts, ${duplicatesSkipped} duplicates skipped)`,
+          `(${createdNames.length} new concepts, ${duplicatesSkipped} duplicates skipped, ` +
+          `${autoCategorized} concepts auto-categorized)`,
       );
 
       return {
@@ -199,6 +213,7 @@ export class ImportService {
         duplicatesSkipped,
         totalRows,
         newConcepts: createdNames.length,
+        autoCategorized,
         metadata: parsed.metadata,
       };
     });

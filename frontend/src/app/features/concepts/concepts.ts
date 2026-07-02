@@ -50,7 +50,20 @@ interface CategoryOption {
           <h1>{{ t('concepts.title') }}</h1>
           <p>{{ t('concepts.subtitle') }}</p>
         </div>
-        <p-button [label]="t('categories.new')" icon="pi pi-plus" (onClick)="openNewCategory(null)" />
+        <div class="flex gap-2">
+          <p-button
+            [label]="t('concepts.autoAssign')"
+            icon="pi pi-sparkles"
+            severity="secondary"
+            [outlined]="true"
+            [loading]="autoAssigning()"
+            [disabled]="uncategorizedCount() === 0"
+            [pTooltip]="t('concepts.autoAssignHint')"
+            tooltipPosition="bottom"
+            (onClick)="autoAssign()"
+          />
+          <p-button [label]="t('categories.new')" icon="pi pi-plus" (onClick)="openNewCategory(null)" />
+        </div>
       </div>
 
       <p-card>
@@ -209,6 +222,7 @@ export class ConceptsComponent implements OnInit {
   concepts = signal<Concept[]>([]);
   categoryOptions = signal<CategoryOption[]>([]);
   onlyUncategorized = signal(false);
+  autoAssigning = signal(false);
 
   dialogVisible = false;
   form: { name: string; color: string } = { name: '', color: '6366f1' };
@@ -249,6 +263,39 @@ export class ConceptsComponent implements OnInit {
 
   private load(): void {
     this.conceptsSvc.list().subscribe((c) => this.concepts.set(c));
+  }
+
+  autoAssign(): void {
+    this.autoAssigning.set(true);
+    this.conceptsSvc.autoCategorize().subscribe({
+      next: (res) => {
+        this.autoAssigning.set(false);
+        this.messages.add({
+          severity: res.assigned > 0 ? 'success' : 'info',
+          summary:
+            res.assigned > 0
+              ? this.transloco.translate('concepts.autoAssigned', {
+                  count: res.assigned,
+                })
+              : this.transloco.translate('concepts.autoAssignedNone'),
+          detail:
+            res.remaining > 0
+              ? this.transloco.translate('concepts.autoAssignRemaining', {
+                  count: res.remaining,
+                })
+              : undefined,
+        });
+        this.load();
+      },
+      error: (err) => {
+        this.autoAssigning.set(false);
+        this.messages.add({
+          severity: 'error',
+          summary: this.transloco.translate('common.error'),
+          detail: err?.error?.message,
+        });
+      },
+    });
   }
 
   assign(concept: Concept, categoryId: string | null): void {

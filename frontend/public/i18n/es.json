@@ -121,6 +121,10 @@
     "duplicates": "Duplicados omitidos",
     "duplicatesSkipped": "{{count}} transacción(es) duplicada(s) ya estaban importadas y se omitieron",
     "newConcepts": "Conceptos nuevos",
+    "suggestCategories": "Sugerir una categoría para cada gasto según el comercio",
+    "suggestCategoriesHint": "A los comercios sin categoría se les asigna una automáticamente (p. ej. SHELL → Fuel). Puedes cambiar cualquier asignación después en Conceptos de gasto.",
+    "autoCategorized": "Categorizados automáticamente",
+    "autoCategorizedDetail": "A {{count}} comercio(s) se les asignó una categoría automáticamente",
     "cardholder": "Titular",
     "cardNumber": "Número de tarjeta",
     "creditLimit": "Límite de crédito",
@@ -165,7 +169,12 @@
     "assigned": "Categoría asignada",
     "search": "Buscar conceptos",
     "onlyUncategorized": "Mostrar solo sin categoría",
-    "newCategoryFor": "Crear una categoría y asignarla aquí"
+    "newCategoryFor": "Crear una categoría y asignarla aquí",
+    "autoAssign": "Asignar categorías automáticamente",
+    "autoAssignHint": "Sugiere y asigna una categoría a cada comercio sin categoría según su nombre",
+    "autoAssigned": "A {{count}} comercio(s) se les asignó una categoría automáticamente",
+    "autoAssignedNone": "No se encontraron sugerencias para los comercios sin categoría",
+    "autoAssignRemaining": "{{count}} comercio(s) siguen sin categoría — asígnalos manualmente"
   },
   "settings": {
     "title": "Configuración",

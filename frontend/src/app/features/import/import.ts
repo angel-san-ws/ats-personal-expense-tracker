@@ -1,11 +1,13 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { FileUpload, FileUploadHandlerEvent } from 'primeng/fileupload';
 import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
+import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { AtsCurrencyPipe } from '../../core/currency.pipe';
@@ -16,12 +18,14 @@ import { ImportBatch, ImportResult } from '../../core/models';
   selector: 'app-import',
   imports: [
     DatePipe,
+    FormsModule,
     TranslocoDirective,
     FileUpload,
     CardModule,
     TableModule,
     ButtonModule,
     TooltipModule,
+    CheckboxModule,
     AtsCurrencyPipe,
   ],
   template: `
@@ -76,6 +80,22 @@ import { ImportBatch, ImportResult } from '../../core/models';
                 </div>
               </ng-template>
             </p-fileupload>
+
+            <div class="mt-3">
+              <div class="flex align-items-center gap-2">
+                <p-checkbox
+                  inputId="suggestCategories"
+                  [binary]="true"
+                  [(ngModel)]="suggestCategories"
+                />
+                <label for="suggestCategories" class="cursor-pointer">
+                  {{ t('import.suggestCategories') }}
+                </label>
+              </div>
+              <small class="block mt-1 text-color-secondary">
+                {{ t('import.suggestCategoriesHint') }}
+              </small>
+            </div>
           </p-card>
 
           @if (result(); as r) {
@@ -85,6 +105,9 @@ import { ImportBatch, ImportResult } from '../../core/models';
                 <div class="col-6 md:col-3"><span class="kpi-label">{{ t('import.payments') }}</span><div class="text-xl font-bold">{{ r.paymentsImported }}</div></div>
                 <div class="col-6 md:col-3"><span class="kpi-label">{{ t('import.duplicates') }}</span><div class="text-xl font-bold">{{ r.duplicatesSkipped }}</div></div>
                 <div class="col-6 md:col-3"><span class="kpi-label">{{ t('import.newConcepts') }}</span><div class="text-xl font-bold">{{ r.newConcepts }}</div></div>
+                @if (r.autoCategorized > 0) {
+                  <div class="col-6 md:col-3"><span class="kpi-label">{{ t('import.autoCategorized') }}</span><div class="text-xl font-bold">{{ r.autoCategorized }}</div></div>
+                }
                 <div class="col-12"><hr class="border-top-1 surface-border" /></div>
                 <div class="col-6"><span class="kpi-label">{{ t('import.cardholder') }}</span><div>{{ r.metadata.cardholderName || '—' }}</div></div>
                 <div class="col-6"><span class="kpi-label">{{ t('import.cardNumber') }}</span><div>{{ r.metadata.cardNumber || '—' }}</div></div>
@@ -143,6 +166,7 @@ export class ImportComponent implements OnInit {
 
   result = signal<ImportResult | null>(null);
   batches = signal<ImportBatch[]>([]);
+  suggestCategories = false;
 
   ngOnInit(): void {
     this.loadBatches();
@@ -151,7 +175,7 @@ export class ImportComponent implements OnInit {
   onUpload(event: FileUploadHandlerEvent, fu: FileUpload): void {
     const file = event.files?.[0];
     if (!file) return;
-    this.importSvc.upload(file).subscribe({
+    this.importSvc.upload(file, this.suggestCategories).subscribe({
       next: (res) => {
         this.result.set(res);
         this.messages.add({
@@ -161,11 +185,15 @@ export class ImportComponent implements OnInit {
             concepts: res.newConcepts,
           }),
           detail:
-            res.duplicatesSkipped > 0
-              ? this.transloco.translate('import.duplicatesSkipped', {
-                  count: res.duplicatesSkipped,
+            res.autoCategorized > 0
+              ? this.transloco.translate('import.autoCategorizedDetail', {
+                  count: res.autoCategorized,
                 })
-              : undefined,
+              : res.duplicatesSkipped > 0
+                ? this.transloco.translate('import.duplicatesSkipped', {
+                    count: res.duplicatesSkipped,
+                  })
+                : undefined,
         });
         fu.clear();
         this.loadBatches();

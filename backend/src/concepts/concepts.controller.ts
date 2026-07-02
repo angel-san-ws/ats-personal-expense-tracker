@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ConceptsService } from './concepts.service';
 import { AssignCategoryDto } from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -13,6 +21,11 @@ export class ConceptsController {
   @Get()
   findAll(@CurrentUser() user: AuthUser) {
     return this.concepts.findAll(user.userId);
+  }
+
+  @Post('auto-categorize')
+  autoCategorize(@CurrentUser() user: AuthUser) {
+    return this.concepts.autoCategorize(user.userId);
   }
 
   @Patch(':id/category')

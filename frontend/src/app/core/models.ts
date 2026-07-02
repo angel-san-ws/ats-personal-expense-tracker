@@ -121,6 +121,8 @@ export interface ImportResult {
   duplicatesSkipped: number;
   totalRows: number;
   newConcepts: number;
+  /** Merchants auto-assigned a category (0 when suggestions were off). */
+  autoCategorized: number;
   metadata: {
     cardholderName: string | null;
     cardNumber: string | null;

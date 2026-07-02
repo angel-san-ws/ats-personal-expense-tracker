@@ -23,13 +23,23 @@ Built with the latest compatible stack:
 - **Import** — upload an Excel/CSV statement. The parser auto-detects the transaction
   header row (`FECHA`, `COMERCIO`, `VALOR`, …), reads statement metadata (cardholder,
   card number, credit/available limits, statement & payment dates) and stores every row.
+  An optional **"Suggest a category for each expense"** checkbox auto-assigns a category
+  to every uncategorized merchant based on keyword rules (e.g. `SHELL` → Fuel,
+  `FARMACIA…` → Health); assignments can be changed later in Expense Concepts.
 - **Filter** everywhere by **date range, card, merchant/concept, category, and free-text search**.
 - **Dashboard** — KPIs (total spend, count, average, top merchant) + charts: spend by
   category (doughnut), spend over time, spend by card, top merchants.
 - **Expenses** — server-side paginated, sortable, filterable table.
 - **Categories** — a CRUD catalog (with colors). A default set is seeded on registration.
 - **Expense Concepts** — every distinct `COMERCIO` becomes a *concept* you can assign to
-  a category; the dashboard and filters roll up by that category.
+  a category; the dashboard and filters roll up by that category. An **"Auto-assign
+  categories"** button suggests a category for every uncategorized merchant.
+- **Learning** — every *manual* concept → category assignment is recorded (per
+  normalized merchant name, shared across all accounts of the installation). Auto
+  suggestions check this learned knowledge first — the category users picked most often
+  for that merchant wins — and fall back to built-in keyword rules. Re-assigning a
+  concept revokes the vote for the previous category, so corrections outweigh mistakes
+  over time.
 - **Settings** — edit profile, change password, switch **language** (EN/ES) and **currency**.
 
 ---
@@ -84,10 +94,13 @@ a statement.
 ## Typical workflow
 
 1. **Register** → you get a default set of categories (Food & Dining, Groceries,
-   Transport, Fuel, Shopping, Entertainment, Health, Services, Other).
+   Transport, Fuel, Shopping, Entertainment, Health, Services, Travel, Education, Other).
 2. **Import** an Excel statement → transactions are stored and each distinct merchant
-   becomes an uncategorized *concept*.
-3. Go to **Expense Concepts** → assign each merchant to a category from the dropdown.
+   becomes a *concept*. Tick **"Suggest a category for each expense"** to let the system
+   categorize merchants automatically from their names.
+3. Go to **Expense Concepts** → assign each merchant to a category from the dropdown,
+   or click **"Auto-assign categories"** to let the system suggest one for every
+   uncategorized merchant.
 4. Explore the **Dashboard** and **Expenses** with the filter bar.
 5. Manage your catalog under **Categories**; change language/currency under **Settings**.
 
@@ -132,6 +145,7 @@ ATS Personal Expense Tracker/
 | GET/POST/PATCH/DELETE | `/categories` | Category catalog CRUD |
 | GET  | `/concepts` | Concepts with stats + category |
 | PATCH | `/concepts/:id/category` | Assign a concept to a category |
+| POST | `/concepts/auto-categorize` | Auto-assign categories to uncategorized concepts |
 | PATCH | `/users/me/profile` `/users/me/settings` | Update profile / preferences |
 | PUT  | `/users/me/password` | Change password |
 

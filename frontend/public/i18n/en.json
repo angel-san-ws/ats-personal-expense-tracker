@@ -121,6 +121,10 @@
     "duplicates": "Duplicates skipped",
     "duplicatesSkipped": "{{count}} duplicate transaction(s) were already imported and skipped",
     "newConcepts": "New concepts",
+    "suggestCategories": "Suggest a category for each expense based on the merchant",
+    "suggestCategoriesHint": "Uncategorized merchants get a category assigned automatically (e.g. SHELL → Fuel). You can change any assignment later in Expense Concepts.",
+    "autoCategorized": "Auto-categorized",
+    "autoCategorizedDetail": "{{count}} merchant(s) were automatically assigned a category",
     "cardholder": "Cardholder",
     "cardNumber": "Card number",
     "creditLimit": "Credit limit",
@@ -165,7 +169,12 @@
     "assigned": "Category assigned",
     "search": "Search concepts",
     "onlyUncategorized": "Show only uncategorized",
-    "newCategoryFor": "Create a category and assign it here"
+    "newCategoryFor": "Create a category and assign it here",
+    "autoAssign": "Auto-assign categories",
+    "autoAssignHint": "Suggest and assign a category to every uncategorized merchant based on its name",
+    "autoAssigned": "{{count}} merchant(s) were automatically assigned a category",
+    "autoAssignedNone": "No suggestions found for the uncategorized merchants",
+    "autoAssignRemaining": "{{count}} merchant(s) remain uncategorized — assign them manually"
   },
   "settings": {
     "title": "Settings",

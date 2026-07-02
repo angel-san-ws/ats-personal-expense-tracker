@@ -3,7 +3,9 @@
     "allow": [
       "Bash(npm run *)",
       "Bash(npx ng *)",
-      "Bash(PORT=3001 node dist/main.js)"
+      "Bash(PORT=3001 node dist/main.js)",
+      "Bash(xargs grep -l \"export interface.*Model\\\\|export type.*Model\")",
+      "Bash(npx tsc *)"
     ]
   }
 }

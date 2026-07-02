@@ -21,6 +21,8 @@ const DEFAULT_CATEGORIES: { name: string; color: string }[] = [
   { name: 'Entertainment', color: '#ec4899' },
   { name: 'Health', color: '#14b8a6' },
   { name: 'Services', color: '#64748b' },
+  { name: 'Travel', color: '#0ea5e9' },
+  { name: 'Education', color: '#8b5cf6' },
   { name: 'Other', color: '#9ca3af' },
 ];
 

@@ -8,9 +8,10 @@ import { ImportBatch, ImportResult } from '../models';
 export class ImportService {
   private http = inject(HttpClient);
 
-  upload(file: File): Observable<ImportResult> {
+  upload(file: File, suggestCategories = false): Observable<ImportResult> {
     const form = new FormData();
     form.append('file', file);
+    form.append('suggestCategories', String(suggestCategories));
     return this.http.post<ImportResult>(`${API_BASE}/import/excel`, form);
   }
 
