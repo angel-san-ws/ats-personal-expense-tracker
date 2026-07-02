@@ -109,6 +109,7 @@ interface Option {
         <label class="text-sm">{{ t('filters.category') }}</label>
         <p-select
           [(ngModel)]="category"
+          (onChange)="apply()"
           [options]="categoryOptions()"
           optionLabel="label"
           optionValue="value"
