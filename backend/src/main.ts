@@ -15,14 +15,14 @@ async function bootstrap() {
     }),
   );
 
-  const corsOrigin = process.env.CORS_ORIGIN?.split(',').map((o) => o.trim()) ?? [
-    'http://localhost:4200',
-  ];
+  const corsOrigin = process.env.CORS_ORIGIN?.split(',').map((o) =>
+    o.trim(),
+  ) ?? ['http://localhost:4200'];
   app.enableCors({ origin: corsOrigin, credentials: true });
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
-  // eslint-disable-next-line no-console
+
   console.log(`API running on http://localhost:${port}/api`);
 }
 bootstrap();

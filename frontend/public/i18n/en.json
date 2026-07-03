@@ -53,7 +53,10 @@
     "vsPrevious": "Spend vs. previous periods",
     "byCard": "Spend by card",
     "topMerchants": "Top merchants",
-    "noData": "No data for the selected filters. Import a statement to get started."
+    "noData": "No data for the selected filters. Import a statement to get started.",
+    "ratesFootnote": "Foreign-currency amounts converted to {{currency}} at the daily reference rate of each expense date",
+    "unconverted": "{{count}} expense(s) in other currencies are pending conversion and excluded from the totals.",
+    "updateRates": "Update rates"
   },
   "filters": {
     "title": "Filters",
@@ -96,7 +99,8 @@
     "deleteSelected": "Delete selected ({{count}})",
     "deleteSelectedConfirm": "Delete {{count}} selected record(s)? This cannot be undone.",
     "deletedCount": "{{count}} record(s) deleted",
-    "recurringHint": "Generated automatically from a fixed expense"
+    "recurringHint": "Generated automatically from a fixed expense",
+    "convertedHint": "Approximate value in your base currency at the reference rate of the expense date"
   },
   "categorySelect": {
     "label": "Category",

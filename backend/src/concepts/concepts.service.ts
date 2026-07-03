@@ -105,7 +105,10 @@ export class ConceptsService {
         where: { userId, id: In(ids) },
       });
       const nameOf = (catId: string | null) =>
-        cats.find((c) => c.id === catId)?.name.trim().toLowerCase() ?? null;
+        cats
+          .find((c) => c.id === catId)
+          ?.name.trim()
+          .toLowerCase() ?? null;
 
       const fromName = nameOf(fromCategoryId);
       const toName = nameOf(toCategoryId);
@@ -288,7 +291,9 @@ export class ConceptsService {
     userId: string,
     names: string[],
   ): Promise<{ idByName: Map<string, string>; createdNames: string[] }> {
-    const unique = Array.from(new Set(names.map((n) => n.trim()).filter(Boolean)));
+    const unique = Array.from(
+      new Set(names.map((n) => n.trim()).filter(Boolean)),
+    );
     const repo = manager.getRepository(Concept);
     const idByName = new Map<string, string>();
     if (unique.length === 0) return { idByName, createdNames: [] };

@@ -62,6 +62,7 @@ export class CategoriesService {
     const existing = await this.categories.findOne({
       where: { userId, name: name.trim() },
     });
-    if (existing) throw new ConflictException('A category with that name already exists');
+    if (existing)
+      throw new ConflictException('A category with that name already exists');
   }
 }

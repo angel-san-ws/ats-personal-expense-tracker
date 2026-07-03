@@ -3,7 +3,22 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, SelectQueryBuilder } from 'typeorm';
 import { Expense, ExpenseKind } from './expense.entity';
 import { ConceptsService } from '../concepts/concepts.service';
+import { UsersService } from '../users/users.service';
+import { RatesService } from '../rates/rates.service';
+import {
+  RateStampingService,
+  StampResult,
+} from '../rates/rate-stamping.service';
 import { CreateExpenseDto, QueryExpensesDto, UpdateExpenseDto } from './dto';
+
+/**
+ * Amount converted to the user's base currency (bind :base). Unstamped
+ * base-currency rows count at face value; unstamped foreign rows yield NULL,
+ * which SUM ignores — they are excluded from converted totals and surface
+ * through `unconvertedCount`.
+ */
+const CONVERTED =
+  'e.valor * COALESCE(e.exchange_rate, CASE WHEN e.currency = :base THEN 1 END)';
 
 export interface ExpenseRow {
   id: string;
@@ -19,6 +34,7 @@ export interface ExpenseRow {
   kind: string;
   excluded: boolean;
   currency: string;
+  exchangeRate: number | null;
   conceptId: string | null;
   categoryId: string | null;
   categoryName: string | null;
@@ -41,9 +57,13 @@ export interface PagedExpenses {
 }
 
 export interface DashboardSummary {
+  /** User's base currency — every converted figure below is in it. */
+  baseCurrency: string;
   totalValor: number;
   count: number;
   avgValor: number;
+  /** Foreign-currency rows without a rate, excluded from converted totals. */
+  unconvertedCount: number;
   byCurrency: CurrencyTotal[];
   byCategory: {
     categoryId: string | null;
@@ -71,7 +91,15 @@ export class ExpensesService {
     @InjectRepository(Expense)
     private readonly expenses: Repository<Expense>,
     private readonly concepts: ConceptsService,
+    private readonly users: UsersService,
+    private readonly rates: RatesService,
+    private readonly stamping: RateStampingService,
   ) {}
+
+  /** User's base currency; converted amounts are expressed in it. */
+  private async baseCurrency(userId: string): Promise<string> {
+    return (await this.users.findById(userId)).currency || 'GTQ';
+  }
 
   /** Resolve (or create) the Concept for a merchant name. Payments carry no concept. */
   private async resolveConceptId(
@@ -98,6 +126,8 @@ export class ExpensesService {
         categoryId: dto.categoryId,
       });
     }
+    const currency = dto.currency?.trim().toUpperCase() || 'GTQ';
+    const base = await this.baseCurrency(userId);
     const expense = this.expenses.create({
       userId,
       fecha: dto.fecha,
@@ -105,7 +135,12 @@ export class ExpensesService {
       valor: dto.valor,
       kind,
       conceptId,
-      currency: dto.currency?.trim().toUpperCase() || undefined,
+      currency,
+      // Null when the rate provider is unreachable — never block the save.
+      exchangeRate:
+        currency === base
+          ? 1
+          : await this.rates.getRate(dto.fecha, currency, base),
       tarjeta: dto.tarjeta?.trim() || null,
       noTarjeta: dto.noTarjeta?.trim() || null,
       tipoMovimiento: dto.tipoMovimiento?.trim() || null,
@@ -150,7 +185,25 @@ export class ExpensesService {
         categoryId: dto.categoryId,
       });
     }
+    // Recompute the rate when the date/currency changed; also retry
+    // opportunistically for rows still pending conversion.
+    if (
+      dto.fecha !== undefined ||
+      dto.currency !== undefined ||
+      expense.exchangeRate === null
+    ) {
+      const base = await this.baseCurrency(userId);
+      expense.exchangeRate =
+        expense.currency === base
+          ? 1
+          : await this.rates.getRate(expense.fecha, expense.currency, base);
+    }
     return this.expenses.save(expense);
+  }
+
+  /** Backfill/retry rate stamping for all of the user's pending rows. */
+  async refreshRates(userId: string): Promise<StampResult> {
+    return this.stamping.stampPending(userId, await this.baseCurrency(userId));
   }
 
   /** Delete a set of expenses/payments owned by the user. */
@@ -185,11 +238,14 @@ export class ExpensesService {
       qb.andWhere('e.excluded = false');
     }
 
-    if (dto.dateFrom) qb.andWhere('e.fecha >= :dateFrom', { dateFrom: dto.dateFrom });
+    if (dto.dateFrom)
+      qb.andWhere('e.fecha >= :dateFrom', { dateFrom: dto.dateFrom });
     if (dto.dateTo) qb.andWhere('e.fecha <= :dateTo', { dateTo: dto.dateTo });
 
     if (dto.card) {
-      qb.andWhere('(e.tarjeta = :card OR e.no_tarjeta = :card)', { card: dto.card });
+      qb.andWhere('(e.tarjeta = :card OR e.no_tarjeta = :card)', {
+        card: dto.card,
+      });
     }
 
     if (dto.currency) {
@@ -247,6 +303,7 @@ export class ExpensesService {
         'e.kind AS kind',
         'e.excluded AS excluded',
         'e.currency AS currency',
+        'e.exchange_rate AS "exchangeRate"',
         'e.concept_id AS "conceptId"',
         'e.recurring_expense_id AS "recurringExpenseId"',
         'concept.category_id AS "categoryId"',
@@ -267,7 +324,8 @@ export class ExpensesService {
 
     const items: ExpenseRow[] = rawItems.map((r) => ({
       id: r.id,
-      fecha: r.fecha instanceof Date ? r.fecha.toISOString().slice(0, 10) : r.fecha,
+      fecha:
+        r.fecha instanceof Date ? r.fecha.toISOString().slice(0, 10) : r.fecha,
       tarjeta: r.tarjeta,
       noTarjeta: r.noTarjeta,
       nombre: r.nombre,
@@ -279,6 +337,7 @@ export class ExpensesService {
       kind: r.kind,
       excluded: r.excluded === true || r.excluded === 'true',
       currency: r.currency,
+      exchangeRate: r.exchangeRate == null ? null : parseFloat(r.exchangeRate),
       conceptId: r.conceptId ?? null,
       recurringExpenseId: r.recurringExpenseId ?? null,
       categoryId: r.categoryId ?? null,
@@ -312,14 +371,23 @@ export class ExpensesService {
     userId: string,
     dto: QueryExpensesDto,
   ): Promise<DashboardSummary> {
-    // Totals
+    const base = await this.baseCurrency(userId);
+
+    // Totals, converted to the base currency
     const totalsRaw = await this.baseQuery(userId, dto, true)
-      .select('COALESCE(SUM(e.valor), 0)', 'total')
+      .select(`COALESCE(SUM(${CONVERTED}), 0)`, 'total')
       .addSelect('COUNT(e.id)', 'count')
+      .setParameter('base', base)
       .getRawOne();
 
     const totalValor = parseFloat(totalsRaw.total) || 0;
     const count = parseInt(totalsRaw.count, 10) || 0;
+
+    // Foreign-currency rows pending conversion (excluded from totals).
+    const unconvertedCount = await this.baseQuery(userId, dto, true)
+      .andWhere('e.exchange_rate IS NULL')
+      .andWhere('e.currency != :base', { base })
+      .getCount();
 
     // Totals per currency (amounts are never converted).
     const byCurrencyRaw = await this.baseQuery(userId, dto, true)
@@ -340,8 +408,9 @@ export class ExpensesService {
       .select('concept.category_id', 'categoryId')
       .addSelect('category.name', 'categoryName')
       .addSelect('category.color', 'color')
-      .addSelect('COALESCE(SUM(e.valor), 0)', 'total')
+      .addSelect(`COALESCE(SUM(${CONVERTED}), 0)`, 'total')
       .addSelect('COUNT(e.id)', 'count')
+      .setParameter('base', base)
       .groupBy('concept.category_id')
       .addGroupBy('category.name')
       .addGroupBy('category.color')
@@ -359,8 +428,9 @@ export class ExpensesService {
     // By card
     const byCardRaw = await this.baseQuery(userId, dto, true)
       .select("COALESCE(e.no_tarjeta, e.tarjeta, 'N/A')", 'card')
-      .addSelect('COALESCE(SUM(e.valor), 0)', 'total')
+      .addSelect(`COALESCE(SUM(${CONVERTED}), 0)`, 'total')
       .addSelect('COUNT(e.id)', 'count')
+      .setParameter('base', base)
       .groupBy("COALESCE(e.no_tarjeta, e.tarjeta, 'N/A')")
       .orderBy('total', 'DESC')
       .getRawMany();
@@ -374,8 +444,9 @@ export class ExpensesService {
     // By month
     const byMonthRaw = await this.baseQuery(userId, dto, true)
       .select("to_char(date_trunc('month', e.fecha), 'YYYY-MM')", 'month')
-      .addSelect('COALESCE(SUM(e.valor), 0)', 'total')
+      .addSelect(`COALESCE(SUM(${CONVERTED}), 0)`, 'total')
       .addSelect('COUNT(e.id)', 'count')
+      .setParameter('base', base)
       .groupBy("date_trunc('month', e.fecha)")
       .orderBy("date_trunc('month', e.fecha)", 'ASC')
       .getRawMany();
@@ -389,8 +460,9 @@ export class ExpensesService {
     // By day
     const byDayRaw = await this.baseQuery(userId, dto, true)
       .select("to_char(e.fecha, 'YYYY-MM-DD')", 'day')
-      .addSelect('COALESCE(SUM(e.valor), 0)', 'total')
+      .addSelect(`COALESCE(SUM(${CONVERTED}), 0)`, 'total')
       .addSelect('COUNT(e.id)', 'count')
+      .setParameter('base', base)
       .groupBy('e.fecha')
       .orderBy('e.fecha', 'ASC')
       .getRawMany();
@@ -406,8 +478,7 @@ export class ExpensesService {
     if (dto.dateFrom && dto.dateTo) {
       const from = new Date(`${dto.dateFrom}T00:00:00`);
       const to = new Date(`${dto.dateTo}T00:00:00`);
-      const days =
-        Math.round((to.getTime() - from.getTime()) / 86_400_000) + 1;
+      const days = Math.round((to.getTime() - from.getTime()) / 86_400_000) + 1;
       if (days >= 1 && days <= 31) {
         const pad = (n: number) => String(n).padStart(2, '0');
         const iso = (d: Date) =>
@@ -423,8 +494,9 @@ export class ExpensesService {
             { ...dto, dateFrom: window.from, dateTo: window.to },
             true,
           )
-            .select('COALESCE(SUM(e.valor), 0)', 'total')
+            .select(`COALESCE(SUM(${CONVERTED}), 0)`, 'total')
             .addSelect('COUNT(e.id)', 'count')
+            .setParameter('base', base)
             .getRawOne();
           previousPeriods.push({
             ...window,
@@ -438,8 +510,9 @@ export class ExpensesService {
     // Top merchants
     const topMerchantsRaw = await this.baseQuery(userId, dto, true)
       .select('e.comercio', 'comercio')
-      .addSelect('COALESCE(SUM(e.valor), 0)', 'total')
+      .addSelect(`COALESCE(SUM(${CONVERTED}), 0)`, 'total')
       .addSelect('COUNT(e.id)', 'count')
+      .setParameter('base', base)
       .groupBy('e.comercio')
       .orderBy('total', 'DESC')
       .limit(10)
@@ -451,10 +524,15 @@ export class ExpensesService {
       count: parseInt(r.count, 10) || 0,
     }));
 
+    // Average over rows that actually contribute to the converted total.
+    const convertedCount = count - unconvertedCount;
+
     return {
+      baseCurrency: base,
       totalValor,
       count,
-      avgValor: count > 0 ? totalValor / count : 0,
+      avgValor: convertedCount > 0 ? totalValor / convertedCount : 0,
+      unconvertedCount,
       byCurrency,
       byCategory,
       byCard,
@@ -493,10 +571,10 @@ export class ExpensesService {
   async distinctCards(userId: string): Promise<string[]> {
     const rows = await this.expenses
       .createQueryBuilder('e')
-      .select("COALESCE(e.no_tarjeta, e.tarjeta)", 'card')
+      .select('COALESCE(e.no_tarjeta, e.tarjeta)', 'card')
       .where('e.user_id = :userId', { userId })
-      .andWhere("COALESCE(e.no_tarjeta, e.tarjeta) IS NOT NULL")
-      .groupBy("COALESCE(e.no_tarjeta, e.tarjeta)")
+      .andWhere('COALESCE(e.no_tarjeta, e.tarjeta) IS NOT NULL')
+      .groupBy('COALESCE(e.no_tarjeta, e.tarjeta)')
       .orderBy('card', 'ASC')
       .getRawMany();
     return rows.map((r) => r.card).filter(Boolean);

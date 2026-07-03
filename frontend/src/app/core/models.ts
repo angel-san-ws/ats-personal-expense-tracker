@@ -50,6 +50,11 @@ export interface Expense {
   kind: ExpenseKind;
   excluded: boolean;
   currency: string;
+  /**
+   * Rate to the user's base currency at `fecha` (converted value =
+   * valor * exchangeRate). Null while the conversion is pending.
+   */
+  exchangeRate: number | null;
   conceptId: string | null;
   categoryId: string | null;
   categoryName: string | null;
@@ -102,9 +107,13 @@ export interface ExpenseQuery {
 }
 
 export interface DashboardSummary {
+  /** User's base currency — all converted totals below are in it. */
+  baseCurrency: string;
   totalValor: number;
   count: number;
   avgValor: number;
+  /** Foreign-currency rows without a rate, excluded from converted totals. */
+  unconvertedCount: number;
   byCurrency: CurrencyTotal[];
   byCategory: {
     categoryId: string | null;

@@ -34,7 +34,9 @@ export class ImportController {
     @Body('suggestCategories') suggestCategories?: string,
   ) {
     if (!file) {
-      throw new BadRequestException('No file was uploaded (field name: "file").');
+      throw new BadRequestException(
+        'No file was uploaded (field name: "file").',
+      );
     }
     const name = (file.originalname || '').toLowerCase();
     if (!/\.(xls|xlsx|xlsm|csv)$/.test(name)) {

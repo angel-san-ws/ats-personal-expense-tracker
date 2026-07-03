@@ -5,7 +5,9 @@
       "Bash(npx ng *)",
       "Bash(PORT=3001 node dist/main.js)",
       "Bash(xargs grep -l \"export interface.*Model\\\\|export type.*Model\")",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(curl -sL --max-time 20 -w '\\\\nfinal_url: %{url_effective}\\\\n' 'https://api.frankfurter.app/2026-06-01..2026-06-10?from=USD&to=EUR,MXN')",
+      "Bash(docker exec *)"
     ]
   }
 }

@@ -38,7 +38,11 @@ const PAYMENT_DESC_RE =
  *  - the description looks like a payment (e.g. "P. ELEC. EN QUETZA.", "PAGO")
  */
 function classifyKind(
-  row: { tipoMovimiento: string | null; comercio: string; saldo: number | null },
+  row: {
+    tipoMovimiento: string | null;
+    comercio: string;
+    saldo: number | null;
+  },
   prevSaldo: number | null,
 ): ParsedKind {
   const isCredit = /cr[eé]dito/i.test(row.tipoMovimiento ?? '');
@@ -104,7 +108,7 @@ function parseDate(value: unknown): string | null {
   const str = String(value).trim();
   const m = str.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})$/);
   if (m) {
-    let [, d, mo, y] = m;
+    const [, d, mo, y] = m;
     let year = parseInt(y, 10);
     if (year < 100) year += 2000;
     return toIso(year, parseInt(mo, 10), parseInt(d, 10));
@@ -139,13 +143,15 @@ function detectColumns(headerRow: unknown[]): Record<ColKey, number> {
   const cols = {} as Record<ColKey, number>;
   const normalized = headerRow.map((c) => norm(c));
 
-  const findExact = (target: string) => normalized.findIndex((h) => h === target);
+  const findExact = (target: string) =>
+    normalized.findIndex((h) => h === target);
   const findIncludes = (target: string) =>
     normalized.findIndex((h) => h.includes(target));
 
   cols.noTarjeta = findExact('no tarjeta');
-  cols.tarjeta =
-    normalized.findIndex((h, i) => h === 'tarjeta' && i !== cols.noTarjeta);
+  cols.tarjeta = normalized.findIndex(
+    (h, i) => h === 'tarjeta' && i !== cols.noTarjeta,
+  );
   cols.fecha = findExact('fecha');
   cols.nombre = findExact('nombre');
   cols.tipoMovimiento =
@@ -154,7 +160,9 @@ function detectColumns(headerRow: unknown[]): Record<ColKey, number> {
       : findIncludes('tipo');
   cols.noDoc = findIncludes('doc');
   cols.comercio =
-    findExact('comercio') !== -1 ? findExact('comercio') : findIncludes('comercio');
+    findExact('comercio') !== -1
+      ? findExact('comercio')
+      : findIncludes('comercio');
   cols.valor = findExact('valor');
   cols.saldo = findExact('saldo');
 
@@ -189,7 +197,11 @@ function parseMetadata(
   const valueRightOf = (r: number, c: number): unknown => {
     const row = block[r] ?? [];
     for (let i = c + 1; i < row.length; i++) {
-      if (row[i] !== null && row[i] !== undefined && String(row[i]).trim() !== '') {
+      if (
+        row[i] !== null &&
+        row[i] !== undefined &&
+        String(row[i]).trim() !== ''
+      ) {
         return row[i];
       }
     }
@@ -287,7 +299,8 @@ export function parseStatement(buffer: Buffer): ParsedStatement {
     // A valid transaction needs a merchant and an amount.
     if (!comercio || valor === null) continue;
     // Skip summary/total rows.
-    if (/^(total|saldo anterior|pago|abono)/i.test(comercio) && !fecha) continue;
+    if (/^(total|saldo anterior|pago|abono)/i.test(comercio) && !fecha)
+      continue;
 
     const strOrNull = (v: unknown): string | null => {
       if (v === null || v === undefined) return null;
@@ -299,10 +312,14 @@ export function parseStatement(buffer: Buffer): ParsedStatement {
     const tipoMovimiento = strOrNull(at(cols.tipoMovimiento));
     const kind = classifyKind({ tipoMovimiento, comercio, saldo }, prevSaldo);
     if (saldo !== null) prevSaldo = saldo;
-    const currency = detectCurrency(at(cols.valor)) ?? detectCurrency(at(cols.saldo));
+    const currency =
+      detectCurrency(at(cols.valor)) ?? detectCurrency(at(cols.saldo));
 
     parsedRows.push({
-      fecha: fecha ?? metadata.statementDate ?? new Date(0).toISOString().slice(0, 10),
+      fecha:
+        fecha ??
+        metadata.statementDate ??
+        new Date(0).toISOString().slice(0, 10),
       tarjeta: strOrNull(at(cols.tarjeta)),
       noTarjeta: strOrNull(at(cols.noTarjeta)),
       nombre: strOrNull(at(cols.nombre)),

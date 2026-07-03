@@ -83,6 +83,21 @@ export class Expense {
   })
   valor: number;
 
+  /**
+   * Rate from `currency` to the user's base currency at `fecha`
+   * (converted value = valor * exchangeRate). 1 for base-currency rows;
+   * NULL means the conversion is still pending.
+   */
+  @Column({
+    name: 'exchange_rate',
+    type: 'numeric',
+    precision: 18,
+    scale: 8,
+    nullable: true,
+    transformer: decimalTransformer,
+  })
+  exchangeRate: number | null;
+
   /** Running balance (SALDO) */
   @Column({
     type: 'numeric',

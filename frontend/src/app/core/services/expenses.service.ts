@@ -58,6 +58,14 @@ export class ExpensesService {
     return this.http.patch<Expense>(`${API_BASE}/expenses/${id}`, changes);
   }
 
+  /** Backfill/retry exchange-rate stamping for rows pending conversion. */
+  refreshRates(): Observable<{ stamped: number; remaining: number }> {
+    return this.http.post<{ stamped: number; remaining: number }>(
+      `${API_BASE}/expenses/refresh-rates`,
+      {},
+    );
+  }
+
   batchDelete(ids: string[]): Observable<{ deleted: number }> {
     return this.http.post<{ deleted: number }>(
       `${API_BASE}/expenses/batch-delete`,

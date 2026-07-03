@@ -9,6 +9,7 @@ import { MerchantCategoryStat } from './concepts/merchant-category-stat.entity';
 import { Expense } from './expenses/expense.entity';
 import { ImportBatch } from './import/import-batch.entity';
 import { RecurringExpense } from './recurring/recurring-expense.entity';
+import { ExchangeRate } from './rates/exchange-rate.entity';
 
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -17,6 +18,7 @@ import { ConceptsModule } from './concepts/concepts.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { ImportModule } from './import/import.module';
 import { RecurringExpensesModule } from './recurring/recurring-expenses.module';
+import { RatesModule } from './rates/rates.module';
 
 @Module({
   imports: [
@@ -38,10 +40,12 @@ import { RecurringExpensesModule } from './recurring/recurring-expenses.module';
           Expense,
           ImportBatch,
           RecurringExpense,
+          ExchangeRate,
         ],
         // Auto-create schema for local dev. Use migrations in production.
         synchronize: true,
-        logging: config.get('DB_LOGGING') === 'true' ? ['query', 'error'] : ['error'],
+        logging:
+          config.get('DB_LOGGING') === 'true' ? ['query', 'error'] : ['error'],
       }),
     }),
     AuthModule,
@@ -51,6 +55,7 @@ import { RecurringExpensesModule } from './recurring/recurring-expenses.module';
     ExpensesModule,
     ImportModule,
     RecurringExpensesModule,
+    RatesModule,
   ],
 })
 export class AppModule {}

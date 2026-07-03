@@ -9,6 +9,8 @@ import { Expense } from '../expenses/expense.entity';
 import { Concept } from '../concepts/concept.entity';
 import { Category } from '../categories/category.entity';
 import { ConceptsService } from '../concepts/concepts.service';
+import { UsersService } from '../users/users.service';
+import { RatesService } from '../rates/rates.service';
 import {
   RecurrenceFrequency,
   RecurringExpense,
@@ -50,6 +52,8 @@ export class RecurringExpensesService {
     @InjectRepository(Expense)
     private readonly expenses: Repository<Expense>,
     private readonly concepts: ConceptsService,
+    private readonly users: UsersService,
+    private readonly rates: RatesService,
   ) {}
 
   private validateDates(startDate: string, endDate: string | null): void {
@@ -229,6 +233,21 @@ export class RecurringExpensesService {
     const due = await this.recurring.find({
       where: { userId, active: true, nextRunDate: LessThanOrEqual(today) },
     });
+    if (due.length === 0) return { generated: 0 };
+
+    // Rate to the user's base currency per (currency, occurrence date);
+    // memoized across templates. Null (provider unreachable) leaves the row
+    // pending conversion — never blocks generation.
+    const base = (await this.users.findById(userId)).currency || 'GTQ';
+    const rateMemo = new Map<string, number | null>();
+    const rateFor = async (currency: string, fecha: string) => {
+      if (currency === base) return 1;
+      const key = `${currency}|${fecha}`;
+      if (!rateMemo.has(key)) {
+        rateMemo.set(key, await this.rates.getRate(fecha, currency, base));
+      }
+      return rateMemo.get(key) ?? null;
+    };
 
     let generated = 0;
     for (const template of due) {
@@ -252,12 +271,17 @@ export class RecurringExpensesService {
           comercio: template.comercio,
           valor: template.valor,
           currency: template.currency,
+          exchangeRate: await rateFor(template.currency, next),
           kind: 'expense',
           conceptId,
           tarjeta: template.tarjeta,
           recurringExpenseId: template.id,
         });
-        next = nextOccurrenceAfter(template.startDate, template.frequency, next);
+        next = nextOccurrenceAfter(
+          template.startDate,
+          template.frequency,
+          next,
+        );
       }
 
       if (rows.length) {

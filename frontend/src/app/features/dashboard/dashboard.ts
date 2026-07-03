@@ -4,6 +4,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
+import { MessageModule } from 'primeng/message';
+import { ButtonModule } from 'primeng/button';
 
 import { FilterBarComponent } from '../shared/filter-bar';
 import { AtsCurrencyPipe } from '../../core/currency.pipe';
@@ -17,6 +19,8 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
     TranslocoDirective,
     CardModule,
     ChartModule,
+    MessageModule,
+    ButtonModule,
     FilterBarComponent,
     AtsCurrencyPipe,
   ],
@@ -29,16 +33,33 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
       <app-filter-bar persistKey="dashboard" (filtersChange)="onFilters($event)" />
 
       @if (summary(); as s) {
+        @if (s.unconvertedCount > 0) {
+          <p-message severity="warn" styleClass="w-full mb-3">
+            <div class="flex align-items-center justify-content-between flex-wrap gap-3 w-full">
+              <span>{{ t('dashboard.unconverted', { count: s.unconvertedCount }) }}</span>
+              <p-button
+                size="small"
+                severity="warn"
+                [outlined]="true"
+                [loading]="refreshingRates()"
+                [label]="t('dashboard.updateRates')"
+                (onClick)="refreshRates()"
+              />
+            </div>
+          </p-message>
+        }
+
         <div class="grid mb-2">
           <div class="col-12 md:col-6 lg:col-3">
             <p-card>
               <div class="kpi-label">{{ t('dashboard.totalSpend') }}</div>
-              @if (s.byCurrency.length) {
-                @for (ct of s.byCurrency; track ct.currency) {
-                  <div class="kpi-value">{{ ct.total | atsCurrency: ct.currency }}</div>
-                }
-              } @else {
-                <div class="kpi-value">{{ 0 | atsCurrency }}</div>
+              <div class="kpi-value">{{ s.totalValor | atsCurrency: s.baseCurrency }}</div>
+              @if (hasConverted()) {
+                <div class="text-sm text-color-secondary mt-1">
+                  @for (ct of s.byCurrency; track ct.currency) {
+                    <span class="mr-2">{{ ct.total | atsCurrency: ct.currency }}</span>
+                  }
+                </div>
               }
             </p-card>
           </div>
@@ -51,7 +72,7 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
           <div class="col-12 md:col-6 lg:col-3">
             <p-card>
               <div class="kpi-label">{{ t('dashboard.avgTransaction') }}</div>
-              <div class="kpi-value">{{ s.avgValor | atsCurrency }}</div>
+              <div class="kpi-value">{{ s.avgValor | atsCurrency: s.baseCurrency }}</div>
             </p-card>
           </div>
           <div class="col-12 md:col-6 lg:col-3">
@@ -63,6 +84,12 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
             </p-card>
           </div>
         </div>
+
+        @if (hasConverted()) {
+          <div class="text-sm text-color-secondary mb-3">
+            {{ t('dashboard.ratesFootnote', { currency: s.baseCurrency }) }}
+          </div>
+        }
 
         @if (s.count === 0) {
           <p-card>
@@ -129,6 +156,13 @@ export class DashboardComponent {
 
   private query = signal<ExpenseQuery>({});
   summary = signal<DashboardSummary | null>(null);
+  refreshingRates = signal(false);
+
+  /** Whether the filtered set contains foreign-currency (converted) amounts. */
+  hasConverted = computed(() => {
+    const s = this.summary();
+    return !!s && s.byCurrency.some((ct) => ct.currency !== s.baseCurrency);
+  });
 
   private lang = toSignal(this.transloco.langChanges$, {
     initialValue: this.transloco.getActiveLang(),
@@ -379,5 +413,17 @@ export class DashboardComponent {
   onFilters(query: ExpenseQuery): void {
     this.query.set(query);
     this.expenses.summary(query).subscribe((s) => this.summary.set(s));
+  }
+
+  /** Backfill missing exchange rates, then reload the summary. */
+  refreshRates(): void {
+    this.refreshingRates.set(true);
+    this.expenses.refreshRates().subscribe({
+      next: () => {
+        this.refreshingRates.set(false);
+        this.onFilters(this.query());
+      },
+      error: () => this.refreshingRates.set(false),
+    });
   }
 }

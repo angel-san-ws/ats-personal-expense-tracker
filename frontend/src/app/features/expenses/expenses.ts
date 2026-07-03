@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { TableModule, TableLazyLoadEvent } from 'primeng/table';
@@ -11,6 +11,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { FilterBarComponent } from '../shared/filter-bar';
 import { ExpenseFormDialogComponent } from '../shared/expense-form-dialog';
+import { AuthService } from '../../core/auth/auth.service';
 import { AtsCurrencyPipe } from '../../core/currency.pipe';
 import { ExpensesService } from '../../core/services/expenses.service';
 import { ExportColumn, ExportService } from '../../core/services/export.service';
@@ -144,7 +145,17 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
                   <span class="text-color-secondary">{{ t('filters.uncategorized') }}</span>
                 }
               </td>
-              <td class="text-right font-semibold">{{ e.valor | atsCurrency: e.currency }}</td>
+              <td class="text-right font-semibold">
+                {{ e.valor | atsCurrency: e.currency }}
+                @if (e.currency !== baseCurrency() && e.exchangeRate != null) {
+                  <div
+                    class="text-xs text-color-secondary font-normal"
+                    [pTooltip]="t('expenses.convertedHint')"
+                  >
+                    {{ e.valor * e.exchangeRate | atsCurrency: baseCurrency() }}
+                  </div>
+                }
+              </td>
               <td class="text-center">
                 <p-checkbox
                   [binary]="true"
@@ -200,6 +211,9 @@ export class ExpensesComponent {
   private transloco = inject(TranslocoService);
   private confirm = inject(ConfirmationService);
   private messages = inject(MessageService);
+  private auth = inject(AuthService);
+
+  baseCurrency = computed(() => this.auth.user()?.currency || 'GTQ');
 
   items = signal<Expense[]>([]);
   total = signal(0);

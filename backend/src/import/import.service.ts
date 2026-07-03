@@ -11,6 +11,7 @@ import { ImportBatch } from './import-batch.entity';
 import { Expense } from '../expenses/expense.entity';
 import { ConceptsService } from '../concepts/concepts.service';
 import { UsersService } from '../users/users.service';
+import { RatesService } from '../rates/rates.service';
 import { parseStatement, ParsedRow } from './excel-parser';
 
 /**
@@ -62,6 +63,7 @@ export class ImportService {
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly concepts: ConceptsService,
     private readonly users: UsersService,
+    private readonly rates: RatesService,
   ) {}
 
   async importExcel(
@@ -104,6 +106,40 @@ export class ImportService {
     }
     for (const r of parsed.rows) {
       r.currency = r.currency ?? majority ?? userCurrency;
+    }
+
+    // Prefetch exchange rates to the user's base currency per foreign
+    // currency. HTTP must stay outside the DB transaction below; failures
+    // leave rows unstamped (NULL rate) and never block the import.
+    const rateByKey = new Map<string, number>();
+    const rangeByCurrency = new Map<string, { min: string; max: string }>();
+    for (const r of parsed.rows) {
+      const currency = r.currency;
+      if (!currency || currency === userCurrency) continue;
+      const range = rangeByCurrency.get(currency);
+      if (!range) {
+        rangeByCurrency.set(currency, { min: r.fecha, max: r.fecha });
+      } else {
+        if (r.fecha < range.min) range.min = r.fecha;
+        if (r.fecha > range.max) range.max = r.fecha;
+      }
+    }
+    for (const [currency, { min, max }] of rangeByCurrency) {
+      try {
+        const byDate = await this.rates.getRatesForRange(
+          currency,
+          userCurrency,
+          min,
+          max,
+        );
+        for (const [date, rate] of byDate) {
+          rateByKey.set(`${currency}|${date}`, rate);
+        }
+      } catch (err) {
+        this.logger.warn(
+          `Rate prefetch ${currency}->${userCurrency} failed: ${(err as Error).message}`,
+        );
+      }
     }
 
     return this.dataSource.transaction(async (manager) => {
@@ -192,7 +228,12 @@ export class ImportService {
           saldo: r.saldo,
           kind: r.kind,
           currency: r.currency ?? userCurrency,
-          conceptId: r.kind === 'expense' ? (idByName.get(r.comercio) ?? null) : null,
+          exchangeRate:
+            (r.currency ?? userCurrency) === userCurrency
+              ? 1
+              : (rateByKey.get(`${r.currency}|${r.fecha}`) ?? null),
+          conceptId:
+            r.kind === 'expense' ? (idByName.get(r.comercio) ?? null) : null,
           importBatchId: savedBatch.id,
         }),
       );

@@ -3,7 +3,7 @@
     "title": "ATS Control de Gastos Personales"
   },
   "nav": {
-    "dashboard": "Panel",
+    "dashboard": "Tablero",
     "expenses": "Gastos",
     "payments": "Pagos",
     "recurring": "Gastos Fijos",
@@ -42,7 +42,7 @@
     "languageHint": "Tus categorías predeterminadas se crearán en este idioma"
   },
   "dashboard": {
-    "title": "Panel",
+    "title": "Tablero",
     "totalSpend": "Gasto total",
     "transactions": "Transacciones",
     "avgTransaction": "Transacción promedio",
@@ -53,7 +53,10 @@
     "vsPrevious": "Gasto vs. períodos anteriores",
     "byCard": "Gasto por tarjeta",
     "topMerchants": "Comercios principales",
-    "noData": "No hay datos para los filtros seleccionados. Importa un estado de cuenta para comenzar."
+    "noData": "No hay datos para los filtros seleccionados. Importa un estado de cuenta para comenzar.",
+    "ratesFootnote": "Montos en moneda extranjera convertidos a {{currency}} al tipo de cambio de referencia diario de la fecha de cada gasto",
+    "unconverted": "{{count}} gasto(s) en otras monedas están pendientes de conversión y no se incluyen en los totales.",
+    "updateRates": "Actualizar tipos de cambio"
   },
   "filters": {
     "title": "Filtros",
@@ -96,7 +99,8 @@
     "deleteSelected": "Eliminar seleccionados ({{count}})",
     "deleteSelectedConfirm": "¿Eliminar {{count}} registro(s) seleccionado(s)? Esta acción no se puede deshacer.",
     "deletedCount": "{{count}} registro(s) eliminado(s)",
-    "recurringHint": "Generado automáticamente desde un gasto fijo"
+    "recurringHint": "Generado automáticamente desde un gasto fijo",
+    "convertedHint": "Valor aproximado en tu moneda base al tipo de cambio de referencia de la fecha del gasto"
   },
   "categorySelect": {
     "label": "Categoría",

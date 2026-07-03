@@ -12,6 +12,7 @@ import { AppLanguage, AppTheme, User } from './user.entity';
 import { Category } from '../categories/category.entity';
 import { ChangePasswordDto, UpdateProfileDto, UpdateSettingsDto } from './dto';
 import { defaultCategoriesFor } from '../common/default-categories';
+import { RateStampingService } from '../rates/rate-stamping.service';
 
 @Injectable()
 export class UsersService {
@@ -19,6 +20,7 @@ export class UsersService {
     @InjectRepository(User) private readonly users: Repository<User>,
     @InjectRepository(Category)
     private readonly categories: Repository<Category>,
+    private readonly stamping: RateStampingService,
   ) {}
 
   findByEmail(email: string): Promise<User | null> {
@@ -73,10 +75,19 @@ export class UsersService {
 
   async updateSettings(userId: string, dto: UpdateSettingsDto): Promise<User> {
     const user = await this.findById(userId);
+    const previousCurrency = user.currency;
     if (dto.language !== undefined) user.language = dto.language;
-    if (dto.currency !== undefined) user.currency = dto.currency.trim().toUpperCase();
+    if (dto.currency !== undefined)
+      user.currency = dto.currency.trim().toUpperCase();
     if (dto.theme !== undefined) user.theme = dto.theme;
-    return this.users.save(user);
+    const saved = await this.users.save(user);
+    // Stamped expense rates target the base currency, so a change invalidates
+    // them all. Restamp is best-effort — leftovers surface in the dashboard's
+    // pending-conversion banner.
+    if (saved.currency !== previousCurrency) {
+      await this.stamping.restampAll(userId, saved.currency || 'GTQ');
+    }
+    return saved;
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {

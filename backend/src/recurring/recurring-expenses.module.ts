@@ -5,11 +5,15 @@ import { Expense } from '../expenses/expense.entity';
 import { RecurringExpensesService } from './recurring-expenses.service';
 import { RecurringExpensesController } from './recurring-expenses.controller';
 import { ConceptsModule } from '../concepts/concepts.module';
+import { UsersModule } from '../users/users.module';
+import { RatesModule } from '../rates/rates.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([RecurringExpense, Expense]),
     ConceptsModule,
+    UsersModule,
+    RatesModule,
   ],
   providers: [RecurringExpensesService],
   controllers: [RecurringExpensesController],

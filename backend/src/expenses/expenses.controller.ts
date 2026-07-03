@@ -51,6 +51,12 @@ export class ExpensesController {
     return this.expenses.create(user.userId, dto);
   }
 
+  @Post('refresh-rates')
+  @HttpCode(200)
+  refreshRates(@CurrentUser() user: AuthUser) {
+    return this.expenses.refreshRates(user.userId);
+  }
+
   @Post('batch-delete')
   @HttpCode(200)
   batchDelete(

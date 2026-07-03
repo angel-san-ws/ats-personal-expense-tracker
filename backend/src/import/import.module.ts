@@ -6,12 +6,14 @@ import { ImportService } from './import.service';
 import { ImportController } from './import.controller';
 import { ConceptsModule } from '../concepts/concepts.module';
 import { UsersModule } from '../users/users.module';
+import { RatesModule } from '../rates/rates.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ImportBatch, Expense]),
     ConceptsModule,
     UsersModule,
+    RatesModule,
   ],
   providers: [ImportService],
   controllers: [ImportController],
