@@ -5,7 +5,10 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ats
-      POSTGRES_PASSWORD: ats_password
+      # Only used when the data volume is first created. To init a fresh volume
+      # with the real password from backend/.env, run:
+      #   docker compose --env-file backend/.env up -d
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ats_password}
       POSTGRES_DB: ats_expenses
     # Host port 5433 (5432 is often taken by a local Postgres install).
     ports:

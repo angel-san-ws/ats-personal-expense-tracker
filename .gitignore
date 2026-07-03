@@ -11,8 +11,8 @@ dist/
 *.log
 npm-debug.log*
 
-# env (kept in repo for local dev convenience; remove before production)
-# backend/.env
+# env — real secrets live here; see backend/.env.example for the template
+backend/.env
 
 # OS / editor
 .DS_Store

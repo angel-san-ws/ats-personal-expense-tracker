@@ -26,12 +26,21 @@ import { RatesModule } from './rates/rates.module';
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        host: config.get<string>('DB_HOST', 'localhost'),
-        port: parseInt(config.get<string>('DB_PORT', '5432'), 10),
-        username: config.get<string>('DB_USER', 'ats'),
-        password: config.get<string>('DB_PASSWORD', 'ats_password'),
-        database: config.get<string>('DB_NAME', 'ats_expenses'),
+        type: 'postgres' as const,
+        // DATABASE_URL (hosted providers like Neon, always over SSL) takes
+        // precedence over the individual DB_* vars used for local Docker.
+        ...(config.get<string>('DATABASE_URL')
+          ? {
+              url: config.get<string>('DATABASE_URL'),
+              ssl: true,
+            }
+          : {
+              host: config.get<string>('DB_HOST', 'localhost'),
+              port: parseInt(config.get<string>('DB_PORT', '5432'), 10),
+              username: config.get<string>('DB_USER', 'ats'),
+              password: config.get<string>('DB_PASSWORD', 'ats_password'),
+              database: config.get<string>('DB_NAME', 'ats_expenses'),
+            }),
         entities: [
           User,
           Category,
