@@ -19,6 +19,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { LanguageService } from '../../core/i18n/language.service';
 import { AppLanguage } from '../../core/models';
 import { PASSWORD_RULES, PasswordRule, strongPasswordValidator } from '../../core/auth/password-policy';
+import { GoogleSigninComponent } from '../shared/google-signin';
 
 function matchPasswords(control: AbstractControl): ValidationErrors | null {
   const password = control.get('password')?.value;
@@ -38,6 +39,7 @@ function matchPasswords(control: AbstractControl): ValidationErrors | null {
     ButtonModule,
     MessageModule,
     SelectModule,
+    GoogleSigninComponent,
   ],
   template: `
     <div class="auth-shell" *transloco="let t">
@@ -132,6 +134,8 @@ function matchPasswords(control: AbstractControl): ValidationErrors | null {
             styleClass="w-full"
           />
         </form>
+
+        <app-google-signin />
 
         <div class="text-center mt-3 text-color-secondary">
           {{ t('auth.haveAccount') }}

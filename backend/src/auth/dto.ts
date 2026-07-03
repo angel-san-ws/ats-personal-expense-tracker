@@ -46,3 +46,18 @@ export class LoginDto {
   @IsString()
   password: string;
 }
+
+export class GoogleLoginDto {
+  /** Google ID token (JWT) issued by Google Identity Services. */
+  @IsString()
+  credential: string;
+
+  /** Used only when the sign-in creates a new account. */
+  @IsOptional()
+  @IsIn(['en', 'es'])
+  language?: 'en' | 'es';
+
+  @IsOptional()
+  @IsIn(['light', 'dark'])
+  theme?: 'light' | 'dark';
+}

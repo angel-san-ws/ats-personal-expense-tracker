@@ -32,6 +32,8 @@
     "passwordMismatch": "Passwords do not match",
     "loginError": "Invalid email or password",
     "registerError": "Could not create the account",
+    "orDivider": "or",
+    "googleError": "Could not sign in with Google. Please try again.",
     "passwordRequirements": "Your password must contain:",
     "ruleMinLength": "At least 8 characters",
     "ruleUppercase": "An uppercase letter",

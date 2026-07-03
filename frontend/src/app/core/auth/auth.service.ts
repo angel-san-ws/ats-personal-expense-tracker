@@ -48,6 +48,18 @@ export class AuthService {
       .pipe(tap((res) => this.setSession(res)));
   }
 
+  /** Exchange a Google ID token for our JWT (creates the account on first login). */
+  googleLogin(credential: string): Observable<AuthResult> {
+    return this.http
+      .post<AuthResult>(`${API_BASE}/auth/google`, {
+        credential,
+        // Used only if this sign-in creates a new account.
+        language: this.lang.active,
+        theme: this.theme.current(),
+      })
+      .pipe(tap((res) => this.setSession(res)));
+  }
+
   /** Load the current user from a stored token (on app start). */
   loadMe(): Observable<User> {
     return this.http

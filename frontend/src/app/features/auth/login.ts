@@ -11,6 +11,7 @@ import { MessageModule } from 'primeng/message';
 import { AuthService } from '../../core/auth/auth.service';
 import { ThemeService } from '../../core/theme.service';
 import { AppTheme } from '../../core/models';
+import { GoogleSigninComponent } from '../shared/google-signin';
 
 @Component({
   selector: 'app-login',
@@ -23,6 +24,7 @@ import { AppTheme } from '../../core/models';
     PasswordModule,
     ButtonModule,
     MessageModule,
+    GoogleSigninComponent,
   ],
   template: `
     <div class="auth-shell" *transloco="let t">
@@ -80,6 +82,8 @@ import { AppTheme } from '../../core/models';
             styleClass="w-full"
           />
         </form>
+
+        <app-google-signin />
 
         <div class="text-center mt-3 text-color-secondary">
           {{ t('auth.noAccount') }}

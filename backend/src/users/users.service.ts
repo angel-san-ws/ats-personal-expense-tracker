@@ -57,6 +57,25 @@ export class UsersService {
     return saved;
   }
 
+  /** Account created via Google sign-in — no password; email is Google-verified. */
+  async createGoogleUser(
+    email: string,
+    name: string,
+    language: AppLanguage = 'en',
+    theme: AppTheme = 'light',
+  ): Promise<User> {
+    const user = this.users.create({
+      email: email.toLowerCase().trim(),
+      name: name.trim(),
+      passwordHash: null,
+      language,
+      theme,
+    });
+    const saved = await this.users.save(user);
+    await this.seedDefaultCategories(saved.id, language);
+    return saved;
+  }
+
   private async seedDefaultCategories(
     userId: string,
     language: AppLanguage,
@@ -105,6 +124,11 @@ export class UsersService {
 
   async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {
     const user = await this.findById(userId);
+    if (!user.passwordHash) {
+      throw new BadRequestException(
+        'This account uses Google sign-in and has no password',
+      );
+    }
     const ok = await bcrypt.compare(dto.currentPassword, user.passwordHash);
     if (!ok) throw new BadRequestException('Current password is incorrect');
     user.passwordHash = await bcrypt.hash(dto.newPassword, 10);

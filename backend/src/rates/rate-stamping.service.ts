@@ -78,7 +78,7 @@ export class RateStampingService {
       }
       if (stampDates.length === 0) continue;
       // The postgres driver returns [rows, rowCount] for raw UPDATEs.
-      const [, affected] = (await this.expenses.query(
+      const [, affected] = await this.expenses.query(
         `UPDATE expenses e
             SET exchange_rate = v.rate
            FROM (SELECT unnest($3::date[]) AS fecha,
@@ -88,7 +88,7 @@ export class RateStampingService {
             AND e.currency = $2
             AND e.fecha = v.fecha`,
         [userId, currency, stampDates, stampRates],
-      )) as [unknown[], number];
+      );
       stamped += affected ?? 0;
     }
 

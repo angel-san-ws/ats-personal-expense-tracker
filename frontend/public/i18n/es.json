@@ -32,6 +32,8 @@
     "passwordMismatch": "Las contraseñas no coinciden",
     "loginError": "Correo o contraseña inválidos",
     "registerError": "No se pudo crear la cuenta",
+    "orDivider": "o",
+    "googleError": "No se pudo iniciar sesión con Google. Inténtalo de nuevo.",
     "passwordRequirements": "Tu contraseña debe contener:",
     "ruleMinLength": "Al menos 8 caracteres",
     "ruleUppercase": "Una letra mayúscula",
