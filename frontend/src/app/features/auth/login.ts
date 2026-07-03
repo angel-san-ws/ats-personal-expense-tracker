@@ -26,7 +26,7 @@ import { AuthService } from '../../core/auth/auth.service';
     <div class="auth-shell" *transloco="let t">
       <p-card styleClass="auth-card">
         <div class="text-center mb-4">
-          <i class="pi pi-wallet text-5xl" style="color: var(--p-primary-color)"></i>
+          <img src="logo.png" alt="" style="height: 4rem; width: 4rem" />
           <h2 class="mt-2 mb-1">{{ t('auth.loginTitle') }}</h2>
           <p class="m-0 text-color-secondary">{{ t('auth.loginSubtitle') }}</p>
         </div>

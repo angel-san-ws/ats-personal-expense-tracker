@@ -41,7 +41,7 @@ interface NavLink {
         style="position: sticky; top: 0; z-index: 100;"
       >
         <div class="flex align-items-center gap-2 mr-2">
-          <i class="pi pi-wallet text-2xl" style="color: var(--p-primary-color)"></i>
+          <img src="logo.png" alt="" style="height: 1.75rem; width: 1.75rem" />
           <span class="font-bold text-lg white-space-nowrap">{{ t('app.title') }}</span>
         </div>
 
