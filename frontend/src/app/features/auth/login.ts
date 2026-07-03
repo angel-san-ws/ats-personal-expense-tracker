@@ -9,6 +9,8 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { ThemeService } from '../../core/theme.service';
+import { AppTheme } from '../../core/models';
 
 @Component({
   selector: 'app-login',
@@ -24,6 +26,15 @@ import { AuthService } from '../../core/auth/auth.service';
   ],
   template: `
     <div class="auth-shell" *transloco="let t">
+      <p-button
+        [style]="{ position: 'fixed', top: '1rem', right: '1rem' }"
+        [text]="true"
+        [rounded]="true"
+        styleClass="text-white"
+        [icon]="theme.current() === 'dark' ? 'pi pi-sun' : 'pi pi-moon'"
+        (onClick)="toggleTheme()"
+        [ariaLabel]="t('nav.toggleTheme')"
+      />
       <p-card styleClass="auth-card">
         <div class="text-center mb-4">
           <img src="logo.png" alt="" style="height: 4rem; width: 4rem" />
@@ -84,6 +95,7 @@ export class LoginComponent {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
   private router = inject(Router);
+  theme = inject(ThemeService);
 
   loading = signal(false);
   error = signal(false);
@@ -92,6 +104,11 @@ export class LoginComponent {
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]],
   });
+
+  toggleTheme(): void {
+    const next: AppTheme = this.theme.current() === 'dark' ? 'light' : 'dark';
+    this.theme.use(next);
+  }
 
   submit(): void {
     if (this.form.invalid) return;
