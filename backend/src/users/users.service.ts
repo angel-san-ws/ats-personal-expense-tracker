@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 
-import { AppLanguage, AppTheme, User } from './user.entity';
+import { AppLanguage, AppTheme, SavedFilter, User } from './user.entity';
 import { Category } from '../categories/category.entity';
 import { ChangePasswordDto, UpdateProfileDto, UpdateSettingsDto } from './dto';
 import { defaultCategoriesFor } from '../common/default-categories';
@@ -88,6 +88,19 @@ export class UsersService {
       await this.stamping.restampAll(userId, saved.currency || 'GTQ');
     }
     return saved;
+  }
+
+  async saveFilter(
+    userId: string,
+    key: string,
+    filter: SavedFilter,
+  ): Promise<User> {
+    if (!/^[a-z][a-z0-9-]{0,31}$/.test(key)) {
+      throw new BadRequestException('Invalid filter key');
+    }
+    const user = await this.findById(userId);
+    user.savedFilters = { ...user.savedFilters, [key]: filter };
+    return this.users.save(user);
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {

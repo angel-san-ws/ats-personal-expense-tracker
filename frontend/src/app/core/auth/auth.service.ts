@@ -67,6 +67,11 @@ export class AuthService {
 
   logout(): void {
     localStorage.removeItem(TOKEN_KEY);
+    // Drop per-page filter state so the next login starts from the filters
+    // saved on that account, not this session's leftovers.
+    for (const key of Object.keys(sessionStorage)) {
+      if (key.startsWith('ats-filters:')) sessionStorage.removeItem(key);
+    }
     this._user.set(null);
     this.router.navigate(['/login']);
   }

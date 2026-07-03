@@ -10,7 +10,9 @@ import { ButtonModule } from 'primeng/button';
 import { ExpensesService } from '../../core/services/expenses.service';
 import { CategoriesService } from '../../core/services/categories.service';
 import { ConceptsService } from '../../core/services/concepts.service';
-import { ExpenseQuery } from '../../core/models';
+import { UsersService } from '../../core/services/users.service';
+import { AuthService } from '../../core/auth/auth.service';
+import { ExpenseQuery, SavedFilterState } from '../../core/models';
 
 interface Option {
   label: string;
@@ -155,6 +157,16 @@ interface Option {
           [outlined]="true"
           (onClick)="clear()"
         />
+        @if (allowSave && persistKey) {
+          <p-button
+            [label]="t(savedRecently() ? 'filters.saved' : 'filters.save')"
+            [icon]="savedRecently() ? 'pi pi-check' : 'pi pi-bookmark'"
+            severity="secondary"
+            [outlined]="true"
+            [loading]="saving()"
+            (onClick)="save()"
+          />
+        }
       </div>
     </div>
   `,
@@ -163,12 +175,23 @@ export class FilterBarComponent implements OnInit {
   private expensesSvc = inject(ExpensesService);
   private categoriesSvc = inject(CategoriesService);
   private conceptsSvc = inject(ConceptsService);
+  private usersSvc = inject(UsersService);
+  private auth = inject(AuthService);
   private route = inject(ActivatedRoute);
 
   /** When set, filter state is kept in sessionStorage under this key and restored on init. */
   @Input() persistKey: string | null = null;
 
+  /**
+   * Shows a Save button that stores the current filters on the user's account
+   * (under persistKey), so they come back after logging out and in again.
+   */
+  @Input() allowSave = false;
+
   @Output() filtersChange = new EventEmitter<ExpenseQuery>();
+
+  saving = signal(false);
+  savedRecently = signal(false);
 
   period = 'custom';
   dateFrom: Date | null = null;
@@ -216,7 +239,12 @@ export class FilterBarComponent implements OnInit {
         concepts.map((c) => ({ label: c.name, value: c.id })),
       ),
     );
-    this.restore();
+    if (!this.restore()) {
+      // No state from this browser session — fall back to the filter saved on
+      // the account, so it survives logging out and back in.
+      const saved = this.auth.user()?.savedFilters?.[this.persistKey ?? ''];
+      if (this.allowSave && saved) this.applyState(saved);
+    }
     this.applyQueryParams();
     this.apply();
   }
@@ -245,48 +273,70 @@ export class FilterBarComponent implements OnInit {
     return `ats-filters:${this.persistKey}`;
   }
 
-  private restore(): void {
-    if (!this.persistKey) return;
+  private restore(): boolean {
+    if (!this.persistKey) return false;
     const raw = sessionStorage.getItem(this.storageKey);
-    if (!raw) return;
+    if (!raw) return false;
     try {
-      const s = JSON.parse(raw);
-      this.period = s.period ?? 'custom';
-      if (this.period !== 'custom') {
-        // Named presets are relative to today, so recompute instead of
-        // restoring dates that may have gone stale.
-        const range = this.computeRange(this.period);
-        this.dateFrom = range.from;
-        this.dateTo = range.to;
-      } else {
-        this.dateFrom = s.dateFrom ? new Date(`${s.dateFrom}T00:00:00`) : null;
-        this.dateTo = s.dateTo ? new Date(`${s.dateTo}T00:00:00`) : null;
-      }
-      this.card = s.card ?? null;
-      this.currency = s.currency ?? null;
-      this.category = s.category ?? null;
-      this.concept = s.concept ?? null;
-      this.search = s.search ?? '';
+      this.applyState(JSON.parse(raw));
+      return true;
     } catch {
       sessionStorage.removeItem(this.storageKey);
+      return false;
     }
+  }
+
+  private applyState(s: SavedFilterState): void {
+    this.period = s.period ?? 'custom';
+    if (this.period !== 'custom') {
+      // Named presets are relative to today, so recompute instead of
+      // restoring dates that may have gone stale.
+      const range = this.computeRange(this.period);
+      this.dateFrom = range.from;
+      this.dateTo = range.to;
+    } else {
+      this.dateFrom = s.dateFrom ? new Date(`${s.dateFrom}T00:00:00`) : null;
+      this.dateTo = s.dateTo ? new Date(`${s.dateTo}T00:00:00`) : null;
+    }
+    this.card = s.card ?? null;
+    this.currency = s.currency ?? null;
+    this.category = s.category ?? null;
+    this.concept = s.concept ?? null;
+    this.search = s.search ?? '';
+  }
+
+  private currentState(): SavedFilterState {
+    return {
+      period: this.period,
+      dateFrom: this.toIso(this.dateFrom),
+      dateTo: this.toIso(this.dateTo),
+      card: this.card ?? undefined,
+      currency: this.currency ?? undefined,
+      category: this.category ?? undefined,
+      concept: this.concept ?? undefined,
+      search: this.search || undefined,
+    };
   }
 
   private persist(): void {
     if (!this.persistKey) return;
-    sessionStorage.setItem(
-      this.storageKey,
-      JSON.stringify({
-        period: this.period,
-        dateFrom: this.toIso(this.dateFrom),
-        dateTo: this.toIso(this.dateTo),
-        card: this.card,
-        currency: this.currency,
-        category: this.category,
-        concept: this.concept,
-        search: this.search,
-      }),
-    );
+    sessionStorage.setItem(this.storageKey, JSON.stringify(this.currentState()));
+  }
+
+  /** Store the current filters on the user's account as this page's default. */
+  save(): void {
+    if (!this.persistKey || this.saving()) return;
+    this.saving.set(true);
+    this.apply();
+    this.usersSvc.saveFilter(this.persistKey, this.currentState()).subscribe({
+      next: (user) => {
+        this.auth.setUser(user);
+        this.saving.set(false);
+        this.savedRecently.set(true);
+        setTimeout(() => this.savedRecently.set(false), 2000);
+      },
+      error: () => this.saving.set(false),
+    });
   }
 
   onPeriodChange(value: string): void {

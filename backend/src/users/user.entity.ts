@@ -14,6 +14,18 @@ import { ImportBatch } from '../import/import-batch.entity';
 export type AppLanguage = 'en' | 'es';
 export type AppTheme = 'light' | 'dark';
 
+/** Filter-bar state saved as the user's default for a page (keyed by page). */
+export interface SavedFilter {
+  period?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  card?: string;
+  currency?: string;
+  category?: string;
+  concept?: string;
+  search?: string;
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -36,6 +48,9 @@ export class User {
 
   @Column({ type: 'varchar', length: 8, default: 'light' })
   theme: AppTheme;
+
+  @Column({ name: 'saved_filters', type: 'jsonb', default: () => "'{}'" })
+  savedFilters: Record<string, SavedFilter>;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

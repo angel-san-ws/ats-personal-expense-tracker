@@ -73,7 +73,9 @@
     "allCategories": "Todas las categorías",
     "uncategorized": "Sin categoría",
     "apply": "Aplicar",
-    "clear": "Limpiar"
+    "clear": "Limpiar",
+    "save": "Guardar filtros",
+    "saved": "Guardado"
   },
   "expenses": {
     "title": "Gastos",

@@ -3,12 +3,18 @@ import {
   Controller,
   Get,
   HttpCode,
+  Param,
   Patch,
   Put,
   UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { ChangePasswordDto, UpdateProfileDto, UpdateSettingsDto } from './dto';
+import {
+  ChangePasswordDto,
+  SavedFilterDto,
+  UpdateProfileDto,
+  UpdateSettingsDto,
+} from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthUser } from '../auth/current-user.decorator';
@@ -38,6 +44,15 @@ export class UsersController {
     @Body() dto: UpdateSettingsDto,
   ) {
     return toPublicUser(await this.users.updateSettings(current.userId, dto));
+  }
+
+  @Put('me/filters/:key')
+  async saveFilter(
+    @CurrentUser() current: AuthUser,
+    @Param('key') key: string,
+    @Body() dto: SavedFilterDto,
+  ) {
+    return toPublicUser(await this.users.saveFilter(current.userId, key, dto));
   }
 
   @Put('me/password')

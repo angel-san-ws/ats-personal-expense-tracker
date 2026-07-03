@@ -73,7 +73,9 @@
     "allCategories": "All categories",
     "uncategorized": "Uncategorized",
     "apply": "Apply",
-    "clear": "Clear"
+    "clear": "Clear",
+    "save": "Save filters",
+    "saved": "Saved"
   },
   "expenses": {
     "title": "Expenses",

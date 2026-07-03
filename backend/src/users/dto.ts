@@ -31,6 +31,48 @@ export class UpdateSettingsDto {
   theme?: 'light' | 'dark';
 }
 
+export class SavedFilterDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  period?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  dateFrom?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  dateTo?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  card?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(8)
+  currency?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  category?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  concept?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  search?: string;
+}
+
 export class ChangePasswordDto {
   @IsString()
   currentPassword: string;

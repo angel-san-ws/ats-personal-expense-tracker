@@ -1,6 +1,18 @@
 export type AppLanguage = 'en' | 'es';
 export type AppTheme = 'light' | 'dark';
 
+/** Filter-bar state saved as the user's default for a page (keyed by page). */
+export interface SavedFilterState {
+  period?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  card?: string;
+  currency?: string;
+  category?: string;
+  concept?: string;
+  search?: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -8,6 +20,7 @@ export interface User {
   language: AppLanguage;
   currency: string;
   theme: AppTheme;
+  savedFilters: Record<string, SavedFilterState>;
   createdAt: string;
 }
 

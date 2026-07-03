@@ -30,7 +30,11 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
         <h1>{{ t('dashboard.title') }}</h1>
       </div>
 
-      <app-filter-bar persistKey="dashboard" (filtersChange)="onFilters($event)" />
+      <app-filter-bar
+        persistKey="dashboard"
+        [allowSave]="true"
+        (filtersChange)="onFilters($event)"
+      />
 
       @if (summary(); as s) {
         @if (s.unconvertedCount > 0) {

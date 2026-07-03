@@ -1,4 +1,4 @@
-import { User } from './user.entity';
+import { SavedFilter, User } from './user.entity';
 
 export interface PublicUser {
   id: string;
@@ -7,6 +7,7 @@ export interface PublicUser {
   language: 'en' | 'es';
   currency: string;
   theme: 'light' | 'dark';
+  savedFilters: Record<string, SavedFilter>;
   createdAt: Date;
 }
 
@@ -18,6 +19,7 @@ export function toPublicUser(user: User): PublicUser {
     language: user.language,
     currency: user.currency,
     theme: user.theme,
+    savedFilters: user.savedFilters ?? {},
     createdAt: user.createdAt,
   };
 }
