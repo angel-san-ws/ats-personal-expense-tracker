@@ -13,6 +13,7 @@ import { ExpensesService } from './expenses.service';
 import {
   BatchAssignCategoryDto,
   BatchDeleteExpensesDto,
+  BatchUpdateExpensesDto,
   CreateExpenseDto,
   QueryExpensesDto,
   SetExcludedDto,
@@ -40,6 +41,11 @@ export class ExpensesController {
   @Get('cards')
   cards(@CurrentUser() user: AuthUser) {
     return this.expenses.distinctCards(user.userId);
+  }
+
+  @Get('field-options')
+  fieldOptions(@CurrentUser() user: AuthUser) {
+    return this.expenses.fieldOptions(user.userId);
   }
 
   @Get('currencies')
@@ -78,6 +84,15 @@ export class ExpensesController {
       dto.ids,
       dto.categoryId ?? null,
     );
+  }
+
+  @Post('batch-update')
+  @HttpCode(200)
+  batchUpdate(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: BatchUpdateExpensesDto,
+  ) {
+    return this.expenses.batchUpdate(user.userId, dto.ids, dto);
   }
 
   @Patch(':id/excluded')

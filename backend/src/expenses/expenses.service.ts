@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, SelectQueryBuilder } from 'typeorm';
 import { Expense, ExpenseKind } from './expense.entity';
@@ -9,7 +13,12 @@ import {
   RateStampingService,
   StampResult,
 } from '../rates/rate-stamping.service';
-import { CreateExpenseDto, QueryExpensesDto, UpdateExpenseDto } from './dto';
+import {
+  BatchUpdateExpensesDto,
+  CreateExpenseDto,
+  QueryExpensesDto,
+  UpdateExpenseDto,
+} from './dto';
 
 /**
  * Amount converted to the user's base currency (bind :base). Unstamped
@@ -231,6 +240,49 @@ export class ExpensesService {
       await this.concepts.assignCategory(userId, conceptId, { categoryId });
     }
     return { concepts: conceptIds.length };
+  }
+
+  /**
+   * Apply the provided fields (card, card number, type, merchant) to the
+   * selected expenses. Empty strings clear the column. A merchant change
+   * re-points expense rows at that merchant's concept — inheriting its
+   * category — exactly like the single-row update; payments keep no concept.
+   */
+  async batchUpdate(
+    userId: string,
+    ids: string[],
+    dto: BatchUpdateExpensesDto,
+  ): Promise<{ updated: number }> {
+    const patch: Partial<Expense> = {};
+    if (dto.tarjeta !== undefined) patch.tarjeta = dto.tarjeta.trim() || null;
+    if (dto.noTarjeta !== undefined) {
+      patch.noTarjeta = dto.noTarjeta.trim() || null;
+    }
+    if (dto.tipoMovimiento !== undefined) {
+      patch.tipoMovimiento = dto.tipoMovimiento.trim() || null;
+    }
+    const comercio = dto.comercio?.trim();
+    if (!comercio && Object.keys(patch).length === 0) {
+      throw new BadRequestException('No fields to update');
+    }
+    if (!comercio) {
+      const res = await this.expenses.update({ userId, id: In(ids) }, patch);
+      return { updated: res.affected ?? 0 };
+    }
+    const { idByName } = await this.concepts.getOrCreateMany(
+      this.expenses.manager,
+      userId,
+      [comercio],
+    );
+    const exp = await this.expenses.update(
+      { userId, id: In(ids), kind: 'expense' },
+      { ...patch, comercio, conceptId: idByName.get(comercio) ?? null },
+    );
+    const pay = await this.expenses.update(
+      { userId, id: In(ids), kind: 'payment' },
+      { ...patch, comercio },
+    );
+    return { updated: (exp.affected ?? 0) + (pay.affected ?? 0) };
   }
 
   /** Delete a set of expenses/payments owned by the user. */
@@ -595,6 +647,32 @@ export class ExpensesService {
   }
 
   /** Distinct card values for filter dropdowns. */
+  /** Distinct card names, card numbers and movement types, for suggestion dropdowns. */
+  async fieldOptions(userId: string): Promise<{
+    tarjetas: string[];
+    noTarjetas: string[];
+    tipoMovimientos: string[];
+  }> {
+    const distinct = async (
+      column: 'tarjeta' | 'no_tarjeta' | 'tipo_movimiento',
+    ) => {
+      const rows = await this.expenses
+        .createQueryBuilder('e')
+        .select(`e.${column}`, 'value')
+        .where('e.user_id = :userId', { userId })
+        .andWhere(`e.${column} IS NOT NULL`)
+        .groupBy(`e.${column}`)
+        .orderBy('value', 'ASC')
+        .getRawMany<{ value: string }>();
+      return rows.map((r) => r.value).filter(Boolean);
+    };
+    return {
+      tarjetas: await distinct('tarjeta'),
+      noTarjetas: await distinct('no_tarjeta'),
+      tipoMovimientos: await distinct('tipo_movimiento'),
+    };
+  }
+
   async distinctCards(userId: string): Promise<string[]> {
     const rows = await this.expenses
       .createQueryBuilder('e')

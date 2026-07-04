@@ -8,6 +8,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { TooltipModule } from 'primeng/tooltip';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { FilterBarComponent } from '../shared/filter-bar';
@@ -15,6 +16,7 @@ import { ExpenseFormDialogComponent } from '../shared/expense-form-dialog';
 import { CategorySelectComponent } from '../shared/category-select';
 import { AuthService } from '../../core/auth/auth.service';
 import { AtsCurrencyPipe } from '../../core/currency.pipe';
+import { ConceptsService } from '../../core/services/concepts.service';
 import { ExpensesService } from '../../core/services/expenses.service';
 import { ExportColumn, ExportService } from '../../core/services/export.service';
 import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
@@ -31,6 +33,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
     TooltipModule,
     ButtonModule,
     DialogModule,
+    AutoCompleteModule,
     FilterBarComponent,
     ExpenseFormDialogComponent,
     CategorySelectComponent,
@@ -54,6 +57,14 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
             size="small"
             [disabled]="selectedConceptCount() === 0"
             (onClick)="openCategorize()"
+          />
+          <p-button
+            icon="pi pi-pencil"
+            [label]="t('expenses.editSelected', { count: selected().length })"
+            [outlined]="true"
+            size="small"
+            [disabled]="selected().length === 0"
+            (onClick)="openBatchEdit()"
           />
           <p-button
             icon="pi pi-trash"
@@ -230,6 +241,105 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
       <app-expense-form-dialog #formDialog kind="expense" (saved)="load()" />
 
       <p-dialog
+        [header]="t('expenses.batchEditHeader')"
+        [visible]="batchEditVisible()"
+        (visibleChange)="batchEditVisible.set($event)"
+        [modal]="true"
+        [style]="{ width: '26rem' }"
+        [dismissableMask]="true"
+      >
+        <div class="flex flex-column gap-3">
+          <span>{{ t('expenses.batchEditNote', { count: selected().length }) }}</span>
+          <div class="flex flex-column gap-1">
+            <label for="batch-edit-card" class="text-sm">{{ t('expenses.card') }}</label>
+            <p-autocomplete
+              inputId="batch-edit-card"
+              [ngModel]="batchEditTarjeta()"
+              (ngModelChange)="batchEditTarjeta.set($event ?? '')"
+              [suggestions]="tarjetaSuggestions()"
+              (completeMethod)="
+                tarjetaSuggestions.set(filterOptions(cardNameOptions(), $event.query))
+              "
+              [dropdown]="true"
+              [fluid]="true"
+              appendTo="body"
+              scrollHeight="14rem"
+              [placeholder]="t('expenses.batchEditKeep')"
+            />
+          </div>
+          <div class="flex flex-column gap-1">
+            <label for="batch-edit-card-no" class="text-sm">{{ t('expenses.cardNo') }}</label>
+            <p-autocomplete
+              inputId="batch-edit-card-no"
+              [ngModel]="batchEditNoTarjeta()"
+              (ngModelChange)="batchEditNoTarjeta.set($event ?? '')"
+              [suggestions]="noTarjetaSuggestions()"
+              (completeMethod)="
+                noTarjetaSuggestions.set(filterOptions(cardNoOptions(), $event.query))
+              "
+              [dropdown]="true"
+              [fluid]="true"
+              appendTo="body"
+              scrollHeight="14rem"
+              [placeholder]="t('expenses.batchEditKeep')"
+            />
+          </div>
+          <div class="flex flex-column gap-1">
+            <label for="batch-edit-type" class="text-sm">{{ t('expenses.type') }}</label>
+            <p-autocomplete
+              inputId="batch-edit-type"
+              [ngModel]="batchEditTipoMovimiento()"
+              (ngModelChange)="batchEditTipoMovimiento.set($event ?? '')"
+              [suggestions]="tipoSuggestions()"
+              (completeMethod)="
+                tipoSuggestions.set(filterOptions(tipoOptions(), $event.query))
+              "
+              [dropdown]="true"
+              [fluid]="true"
+              appendTo="body"
+              scrollHeight="14rem"
+              [placeholder]="t('expenses.batchEditKeep')"
+            />
+          </div>
+          <div class="flex flex-column gap-1">
+            <label for="batch-edit-merchant" class="text-sm">{{ t('expenses.merchant') }}</label>
+            <p-autocomplete
+              inputId="batch-edit-merchant"
+              [ngModel]="batchEditComercio()"
+              (ngModelChange)="batchEditComercio.set($event ?? '')"
+              [suggestions]="comercioSuggestions()"
+              (completeMethod)="
+                comercioSuggestions.set(filterOptions(merchantOptions(), $event.query))
+              "
+              [dropdown]="true"
+              [fluid]="true"
+              appendTo="body"
+              scrollHeight="14rem"
+              [placeholder]="t('expenses.batchEditKeep')"
+            />
+            @if (batchEditComercio().trim()) {
+              <small class="text-color-secondary">{{ t('expenses.batchEditMerchantNote') }}</small>
+            }
+          </div>
+        </div>
+        <ng-template #footer>
+          <p-button
+            [label]="t('expenses.categorizeCancel')"
+            [text]="true"
+            severity="secondary"
+            (onClick)="batchEditVisible.set(false)"
+          />
+          <p-button
+            [label]="t('expenses.categorizeApply')"
+            icon="pi pi-check"
+            [loading]="batchEditing()"
+            [disabled]="!hasBatchEditChanges()"
+            (onClick)="applyBatchEdit()"
+          />
+        </ng-template>
+      </p-dialog>
+
+      <p-dialog
         [header]="t('expenses.categorizeHeader')"
         [visible]="categorizeVisible()"
         (visibleChange)="categorizeVisible.set($event)"
@@ -265,6 +375,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
 })
 export class ExpensesComponent {
   private expensesSvc = inject(ExpensesService);
+  private conceptsSvc = inject(ConceptsService);
   private exportSvc = inject(ExportService);
   private transloco = inject(TranslocoService);
   private confirm = inject(ConfirmationService);
@@ -284,6 +395,34 @@ export class ExpensesComponent {
   categorizeVisible = signal(false);
   categorizeCategoryId = signal<string | null>(null);
   categorizing = signal(false);
+
+  batchEditVisible = signal(false);
+  batchEditTarjeta = signal('');
+  batchEditNoTarjeta = signal('');
+  batchEditTipoMovimiento = signal('');
+  batchEditComercio = signal('');
+  batchEditing = signal(false);
+
+  /** Existing values offered as suggestions in the batch-edit dropdowns. */
+  cardNameOptions = signal<string[]>([]);
+  cardNoOptions = signal<string[]>([]);
+  tipoOptions = signal<string[]>([]);
+  merchantOptions = signal<string[]>([]);
+  tarjetaSuggestions = signal<string[]>([]);
+  noTarjetaSuggestions = signal<string[]>([]);
+  tipoSuggestions = signal<string[]>([]);
+  comercioSuggestions = signal<string[]>([]);
+
+  /** Blank fields mean "keep"; the apply button needs at least one filled. */
+  hasBatchEditChanges = computed(
+    () =>
+      !!(
+        this.batchEditTarjeta().trim() ||
+        this.batchEditNoTarjeta().trim() ||
+        this.batchEditTipoMovimiento().trim() ||
+        this.batchEditComercio().trim()
+      ),
+  );
 
   /** Distinct merchants (concepts) among the selected rows; payments carry none. */
   selectedConceptCount = computed(
@@ -373,6 +512,75 @@ export class ExpensesComponent {
     } finally {
       this.exporting.set(false);
     }
+  }
+
+  openBatchEdit(): void {
+    if (this.selected().length === 0) return;
+    this.batchEditTarjeta.set('');
+    this.batchEditNoTarjeta.set('');
+    this.batchEditTipoMovimiento.set('');
+    this.batchEditComercio.set('');
+    this.batchEditVisible.set(true);
+    // Refresh the suggestion pools; best-effort, the fields stay free-text.
+    this.expensesSvc.fieldOptions().subscribe({
+      next: (res) => {
+        this.cardNameOptions.set(res.tarjetas);
+        this.cardNoOptions.set(res.noTarjetas);
+        this.tipoOptions.set(res.tipoMovimientos);
+      },
+      error: () => {},
+    });
+    this.conceptsSvc.list().subscribe({
+      next: (concepts) => this.merchantOptions.set(concepts.map((c) => c.name)),
+      error: () => {},
+    });
+  }
+
+  /** Case-insensitive contains-filter for the autocomplete suggestions. */
+  filterOptions(options: string[], query: string): string[] {
+    const q = query.trim().toLowerCase();
+    return q ? options.filter((o) => o.toLowerCase().includes(q)) : [...options];
+  }
+
+  applyBatchEdit(): void {
+    if (this.batchEditing() || !this.hasBatchEditChanges()) return;
+    const ids = this.selected().map((e) => e.id);
+    if (ids.length === 0) return;
+    const changes: {
+      tarjeta?: string;
+      noTarjeta?: string;
+      tipoMovimiento?: string;
+      comercio?: string;
+    } = {};
+    if (this.batchEditTarjeta().trim()) changes.tarjeta = this.batchEditTarjeta().trim();
+    if (this.batchEditNoTarjeta().trim()) changes.noTarjeta = this.batchEditNoTarjeta().trim();
+    if (this.batchEditTipoMovimiento().trim()) {
+      changes.tipoMovimiento = this.batchEditTipoMovimiento().trim();
+    }
+    if (this.batchEditComercio().trim()) changes.comercio = this.batchEditComercio().trim();
+    this.batchEditing.set(true);
+    this.expensesSvc.batchUpdate(ids, changes).subscribe({
+      next: (res) => {
+        this.batchEditing.set(false);
+        this.batchEditVisible.set(false);
+        this.messages.add({
+          severity: 'success',
+          summary: this.transloco.translate('expenses.updatedCount', {
+            count: res.updated,
+          }),
+        });
+        this.selected.set([]);
+        this.load();
+      },
+      error: (err) => {
+        this.batchEditing.set(false);
+        this.messages.add({
+          severity: 'error',
+          summary: this.transloco.translate('common.error'),
+          detail: err?.error?.message,
+        });
+      },
+    });
   }
 
   openCategorize(): void {

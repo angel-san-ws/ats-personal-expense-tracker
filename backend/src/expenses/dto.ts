@@ -138,6 +138,39 @@ export class BatchAssignCategoryDto {
   categoryId?: string | null;
 }
 
+export class BatchUpdateExpensesDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMaxSize(1000)
+  @IsUUID(undefined, { each: true })
+  ids: string[];
+
+  /** Empty string clears the card name. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  tarjeta?: string;
+
+  /** Empty string clears the card number. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  noTarjeta?: string;
+
+  /** Empty string clears the movement type. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  tipoMovimiento?: string;
+
+  /** Re-points expense rows at this merchant's concept (and its category). */
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(200)
+  comercio?: string;
+}
+
 export class QueryExpensesDto {
   /** ISO date (yyyy-mm-dd) inclusive lower bound on FECHA */
   @IsOptional()

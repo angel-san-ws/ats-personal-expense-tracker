@@ -40,6 +40,19 @@ export class ExpensesService {
     return this.http.get<string[]>(`${API_BASE}/expenses/cards`);
   }
 
+  /** Distinct card names / card numbers / movement types, for suggestion dropdowns. */
+  fieldOptions(): Observable<{
+    tarjetas: string[];
+    noTarjetas: string[];
+    tipoMovimientos: string[];
+  }> {
+    return this.http.get<{
+      tarjetas: string[];
+      noTarjetas: string[];
+      tipoMovimientos: string[];
+    }>(`${API_BASE}/expenses/field-options`);
+  }
+
   currencies(): Observable<string[]> {
     return this.http.get<string[]>(`${API_BASE}/expenses/currencies`);
   }
@@ -77,6 +90,26 @@ export class ExpensesService {
     return this.http.post<{ concepts: number }>(
       `${API_BASE}/expenses/batch-assign-category`,
       { ids, categoryId },
+    );
+  }
+
+  /**
+   * Apply the provided fields to all given expenses. Omitted fields are left
+   * untouched; a merchant change also re-links the rows to that merchant's
+   * concept/category on the backend.
+   */
+  batchUpdate(
+    ids: string[],
+    changes: {
+      tarjeta?: string;
+      noTarjeta?: string;
+      tipoMovimiento?: string;
+      comercio?: string;
+    },
+  ): Observable<{ updated: number }> {
+    return this.http.post<{ updated: number }>(
+      `${API_BASE}/expenses/batch-update`,
+      { ids, ...changes },
     );
   }
 
