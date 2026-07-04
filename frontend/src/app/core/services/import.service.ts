@@ -15,6 +15,18 @@ export class ImportService {
     return this.http.post<ImportResult>(`${API_BASE}/import/excel`, form);
   }
 
+  uploadScreenshots(
+    files: File[],
+    suggestCategories = false,
+  ): Observable<ImportResult> {
+    const form = new FormData();
+    for (const file of files) {
+      form.append('files', file);
+    }
+    form.append('suggestCategories', String(suggestCategories));
+    return this.http.post<ImportResult>(`${API_BASE}/import/screenshot`, form);
+  }
+
   batches(): Observable<ImportBatch[]> {
     return this.http.get<ImportBatch[]>(`${API_BASE}/import/batches`);
   }

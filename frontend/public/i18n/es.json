@@ -91,8 +91,8 @@
     "amount": "Valor",
     "balance": "Saldo",
     "category": "Categoría",
-    "include": "En panel",
-    "excludeHint": "Desmarca para excluir este gasto de los totales y gráficas del panel",
+    "include": "En tablero",
+    "excludeHint": "Desmarca para excluir este gasto de los totales y gráficas del tablero",
     "total": "Total",
     "empty": "No se encontraron gastos. Ajusta los filtros o importa un estado de cuenta.",
     "showing": "Mostrando {{count}} de {{total}}",
@@ -206,7 +206,12 @@
     "noHistory": "Aún no hay importaciones",
     "deleteBatch": "Eliminar esta importación",
     "deleteConfirm": "¿Eliminar \"{{filename}}\" y sus {{rows}} transacción(es) importadas? Esta acción no se puede deshacer.",
-    "deleted": "Importación eliminada ({{rows}} transacciones eliminadas)"
+    "deleted": "Importación eliminada ({{rows}} transacciones eliminadas)",
+    "screenshotTitle": "Importar desde capturas de notificaciones",
+    "screenshotHint": "Sube capturas de las alertas de consumo de tu banco (p. ej. BiMovil). El monto, comercio, fecha y tarjeta se leen automáticamente de cada notificación.",
+    "chooseScreenshots": "Elegir capturas",
+    "screenshotDropHint": "Arrastra las capturas aquí o haz clic para buscarlas",
+    "readingScreenshots": "Leyendo capturas… la primera importación puede tardar un poco más."
   },
   "categories": {
     "title": "Categorías",

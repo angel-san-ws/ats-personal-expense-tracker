@@ -23,6 +23,9 @@ Thumbs.db
 # test artifacts
 .playwright-mcp/
 
+# tesseract.js traineddata cache (downloaded on first screenshot import)
+backend/.tesseract/
+
 # local startup script
 run.ps1
 run-info.txt

@@ -98,6 +98,80 @@ import { ImportBatch, ImportResult } from '../../core/models';
             </div>
           </p-card>
 
+          <p-card styleClass="mt-3">
+            <div class="mb-2">
+              <div class="font-medium">{{ t('import.screenshotTitle') }}</div>
+              <small class="text-color-secondary">
+                {{ t('import.screenshotHint') }}
+              </small>
+            </div>
+            <p-fileupload
+              #sfu
+              name="files"
+              [customUpload]="true"
+              (uploadHandler)="onUploadScreenshots($event, sfu)"
+              [multiple]="true"
+              accept="image/png,image/jpeg"
+              [maxFileSize]="10485760"
+              [disabled]="screenshotBusy()"
+              [chooseLabel]="t('import.chooseScreenshots')"
+              [uploadLabel]="t('import.upload')"
+              [cancelLabel]="t('import.cancel')"
+            >
+              <ng-template
+                #file
+                let-file
+                let-removeFileCallback="removeFileCallback"
+                let-index="index"
+              >
+                <div class="flex align-items-center gap-3 p-2 border-round surface-100 mt-2">
+                  <i class="pi pi-image text-2xl" style="color: var(--p-blue-600)"></i>
+                  <div class="flex-1">
+                    <div class="font-medium">{{ file.name }}</div>
+                    <div class="text-sm text-color-secondary">
+                      {{ (file.size / 1024).toFixed(1) }} KB
+                    </div>
+                  </div>
+                  <p-button
+                    icon="pi pi-times"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="danger"
+                    (onClick)="removeFileCallback($event, index)"
+                  />
+                </div>
+              </ng-template>
+              <ng-template #empty>
+                <div class="text-center p-4 text-color-secondary">
+                  <i class="pi pi-image text-4xl mb-2 block"></i>
+                  {{ t('import.screenshotDropHint') }}
+                </div>
+              </ng-template>
+            </p-fileupload>
+            @if (screenshotBusy()) {
+              <div class="mt-2 text-color-secondary">
+                <i class="pi pi-spin pi-spinner mr-2"></i>
+                {{ t('import.readingScreenshots') }}
+              </div>
+            }
+
+            <div class="mt-3">
+              <div class="flex align-items-center gap-2">
+                <p-checkbox
+                  inputId="suggestCategoriesScreenshots"
+                  [binary]="true"
+                  [(ngModel)]="suggestCategoriesScreenshots"
+                />
+                <label for="suggestCategoriesScreenshots" class="cursor-pointer">
+                  {{ t('import.suggestCategories') }}
+                </label>
+              </div>
+              <small class="block mt-1 text-color-secondary">
+                {{ t('import.suggestCategoriesHint') }}
+              </small>
+            </div>
+          </p-card>
+
           @if (result(); as r) {
             <p-card [header]="t('import.result')" styleClass="mt-3">
               <div class="grid">
@@ -166,7 +240,9 @@ export class ImportComponent implements OnInit {
 
   result = signal<ImportResult | null>(null);
   batches = signal<ImportBatch[]>([]);
+  screenshotBusy = signal(false);
   suggestCategories = false;
+  suggestCategoriesScreenshots = false;
 
   ngOnInit(): void {
     this.loadBatches();
@@ -176,37 +252,62 @@ export class ImportComponent implements OnInit {
     const file = event.files?.[0];
     if (!file) return;
     this.importSvc.upload(file, this.suggestCategories).subscribe({
-      next: (res) => {
-        this.result.set(res);
-        this.messages.add({
-          severity: res.rowCount === 0 ? 'info' : 'success',
-          summary: this.transloco.translate('import.success', {
-            rows: res.rowCount,
-            concepts: res.newConcepts,
-          }),
-          detail:
-            res.autoCategorized > 0
-              ? this.transloco.translate('import.autoCategorizedDetail', {
-                  count: res.autoCategorized,
-                })
-              : res.duplicatesSkipped > 0
-                ? this.transloco.translate('import.duplicatesSkipped', {
-                    count: res.duplicatesSkipped,
-                  })
-                : undefined,
-        });
-        fu.clear();
-        this.loadBatches();
-      },
-      error: (err) => {
-        this.messages.add({
-          severity: 'error',
-          summary: this.transloco.translate('import.error'),
-          detail: err?.error?.message,
-        });
-        fu.clear();
-      },
+      next: (res) => this.handleImportSuccess(res, fu),
+      error: (err) => this.handleImportError(err, fu),
     });
+  }
+
+  onUploadScreenshots(event: FileUploadHandlerEvent, fu: FileUpload): void {
+    const files = event.files ?? [];
+    if (files.length === 0) return;
+    this.screenshotBusy.set(true);
+    this.importSvc
+      .uploadScreenshots(files, this.suggestCategoriesScreenshots)
+      .subscribe({
+        next: (res) => {
+          this.screenshotBusy.set(false);
+          this.handleImportSuccess(res, fu);
+        },
+        error: (err) => {
+          this.screenshotBusy.set(false);
+          this.handleImportError(err, fu);
+        },
+      });
+  }
+
+  private handleImportSuccess(res: ImportResult, fu: FileUpload): void {
+    this.result.set(res);
+    this.messages.add({
+      severity: res.rowCount === 0 ? 'info' : 'success',
+      summary: this.transloco.translate('import.success', {
+        rows: res.rowCount,
+        concepts: res.newConcepts,
+      }),
+      detail:
+        res.autoCategorized > 0
+          ? this.transloco.translate('import.autoCategorizedDetail', {
+              count: res.autoCategorized,
+            })
+          : res.duplicatesSkipped > 0
+            ? this.transloco.translate('import.duplicatesSkipped', {
+                count: res.duplicatesSkipped,
+              })
+            : undefined,
+    });
+    fu.clear();
+    this.loadBatches();
+  }
+
+  private handleImportError(
+    err: { error?: { message?: string } },
+    fu: FileUpload,
+  ): void {
+    this.messages.add({
+      severity: 'error',
+      summary: this.transloco.translate('import.error'),
+      detail: err?.error?.message,
+    });
+    fu.clear();
   }
 
   confirmDeleteBatch(batch: ImportBatch): void {

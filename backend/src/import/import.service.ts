@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -12,7 +13,11 @@ import { Expense } from '../expenses/expense.entity';
 import { ConceptsService } from '../concepts/concepts.service';
 import { UsersService } from '../users/users.service';
 import { RatesService } from '../rates/rates.service';
-import { parseStatement, ParsedRow } from './excel-parser';
+import { parseStatement, ParsedRow, ParsedStatement } from './excel-parser';
+import { ALERT_IMAGE_PARSER } from './alert-image-parser';
+import type { AlertImageParser } from './alert-image-parser';
+import { ParsedAlert } from './alert-text-parser';
+import { correctCardLabel } from './card-label.util';
 
 /**
  * A transaction's natural identity for de-duplication: the bank document
@@ -64,6 +69,8 @@ export class ImportService {
     private readonly concepts: ConceptsService,
     private readonly users: UsersService,
     private readonly rates: RatesService,
+    @Inject(ALERT_IMAGE_PARSER)
+    private readonly alertImageParser: AlertImageParser,
   ) {}
 
   async importExcel(
@@ -72,7 +79,7 @@ export class ImportService {
     buffer: Buffer,
     suggestCategories = false,
   ): Promise<ImportResult> {
-    let parsed;
+    let parsed: ParsedStatement;
     try {
       parsed = parseStatement(buffer);
     } catch (err) {
@@ -87,13 +94,125 @@ export class ImportService {
       );
     }
 
-    const totalRows = parsed.rows.length;
+    return this.persistRows(
+      userId,
+      filename,
+      parsed.rows,
+      parsed.metadata,
+      suggestCategories,
+    );
+  }
+
+  /**
+   * Import bank-notification screenshots (consumption alerts). Each image is
+   * turned into transactions by the configured AlertImageParser (OCR today),
+   * then flows through the same pipeline as statement imports: dedup by
+   * authorization number (`noDoc`), concept creation, rate stamping.
+   */
+  async importScreenshots(
+    userId: string,
+    files: { originalname: string; buffer: Buffer; mimetype: string }[],
+    suggestCategories = false,
+  ): Promise<ImportResult> {
+    const rows: ParsedRow[] = [];
+    for (const file of files) {
+      let alerts: ParsedAlert[];
+      try {
+        alerts = await this.alertImageParser.parseImage(
+          file.buffer,
+          file.mimetype,
+        );
+      } catch (err) {
+        this.logger.error(
+          `Screenshot parse failed (${file.originalname}): ${(err as Error).message}`,
+        );
+        throw new BadRequestException(
+          `Could not read the screenshot "${file.originalname}".`,
+        );
+      }
+      rows.push(
+        ...alerts.map((a): ParsedRow => ({
+          fecha: a.fecha,
+          tarjeta: a.tarjeta,
+          noTarjeta: null,
+          nombre: null,
+          tipoMovimiento: null,
+          noDoc: a.autorizacion,
+          comercio: a.comercio,
+          valor: a.valor,
+          saldo: null,
+          kind: a.kind,
+          currency: a.currency,
+        })),
+      );
+    }
+
+    if (rows.length === 0) {
+      throw new BadRequestException(
+        'No transactions were recognized in the screenshots. Make sure the notifications are fully visible and readable.',
+      );
+    }
+
+    // OCR misreads single characters in card labels (e.g. TCREDITO8 →
+    // TCREDITOS); snap them to the user's already-stored card labels.
+    const knownCards = await this.knownCardLabels(userId);
+    for (const r of rows) {
+      r.tarjeta = correctCardLabel(r.tarjeta, knownCards);
+    }
+
+    const filename =
+      files.length === 1
+        ? files[0].originalname
+        : `${files[0].originalname} (+${files.length - 1})`;
+    const emptyMetadata: ParsedStatement['metadata'] = {
+      cardholderName: null,
+      cardNumber: null,
+      creditLimit: null,
+      availableLimit: null,
+      pastDueBalance: null,
+      minimumPayment: null,
+      statementDate: null,
+      paymentDueDate: null,
+    };
+    return this.persistRows(
+      userId,
+      filename,
+      rows,
+      emptyMetadata,
+      suggestCategories,
+    );
+  }
+
+  /** Distinct card labels already stored for the user. */
+  private async knownCardLabels(userId: string): Promise<string[]> {
+    const raw: { tarjeta: string }[] = await this.dataSource
+      .getRepository(Expense)
+      .createQueryBuilder('e')
+      .select('DISTINCT e.tarjeta', 'tarjeta')
+      .where('e.user_id = :userId', { userId })
+      .andWhere('e.tarjeta IS NOT NULL')
+      .getRawMany();
+    return raw.map((r) => r.tarjeta);
+  }
+
+  /**
+   * Shared tail of every import: resolve currencies, prefetch exchange rates,
+   * dedup against stored transactions and insert the batch.
+   */
+  private async persistRows(
+    userId: string,
+    filename: string,
+    rows: ParsedRow[],
+    metadata: ParsedStatement['metadata'],
+    suggestCategories: boolean,
+  ): Promise<ImportResult> {
+    const totalRows = rows.length;
 
     // Resolve each row's currency: detected symbol → file's majority → user default.
     const user = await this.users.findById(userId);
     const userCurrency = user.currency || 'GTQ';
     const counts = new Map<string, number>();
-    for (const r of parsed.rows) {
+    for (const r of rows) {
       if (r.currency) counts.set(r.currency, (counts.get(r.currency) ?? 0) + 1);
     }
     let majority: string | null = null;
@@ -104,7 +223,7 @@ export class ImportService {
         majority = c;
       }
     }
-    for (const r of parsed.rows) {
+    for (const r of rows) {
       r.currency = r.currency ?? majority ?? userCurrency;
     }
 
@@ -113,7 +232,7 @@ export class ImportService {
     // leave rows unstamped (NULL rate) and never block the import.
     const rateByKey = new Map<string, number>();
     const rangeByCurrency = new Map<string, { min: string; max: string }>();
-    for (const r of parsed.rows) {
+    for (const r of rows) {
       const currency = r.currency;
       if (!currency || currency === userCurrency) continue;
       const range = rangeByCurrency.get(currency);
@@ -155,7 +274,7 @@ export class ImportService {
 
       const freshRows: ParsedRow[] = [];
       let duplicatesSkipped = 0;
-      for (const r of parsed.rows) {
+      for (const r of rows) {
         const sig = signature(r);
         if (seen.has(sig)) {
           duplicatesSkipped++;
@@ -179,7 +298,7 @@ export class ImportService {
           totalRows,
           newConcepts: 0,
           autoCategorized: 0,
-          metadata: parsed.metadata,
+          metadata,
         };
       }
 
@@ -187,14 +306,14 @@ export class ImportService {
         userId,
         filename,
         rowCount: freshRows.length,
-        cardholderName: parsed.metadata.cardholderName,
-        cardNumber: parsed.metadata.cardNumber,
-        creditLimit: parsed.metadata.creditLimit,
-        availableLimit: parsed.metadata.availableLimit,
-        pastDueBalance: parsed.metadata.pastDueBalance,
-        minimumPayment: parsed.metadata.minimumPayment,
-        statementDate: parsed.metadata.statementDate,
-        paymentDueDate: parsed.metadata.paymentDueDate,
+        cardholderName: metadata.cardholderName,
+        cardNumber: metadata.cardNumber,
+        creditLimit: metadata.creditLimit,
+        availableLimit: metadata.availableLimit,
+        pastDueBalance: metadata.pastDueBalance,
+        minimumPayment: metadata.minimumPayment,
+        statementDate: metadata.statementDate,
+        paymentDueDate: metadata.paymentDueDate,
       });
       const savedBatch = await manager.save(batch);
 
@@ -255,7 +374,7 @@ export class ImportService {
         totalRows,
         newConcepts: createdNames.length,
         autoCategorized,
-        metadata: parsed.metadata,
+        metadata,
       };
     });
   }

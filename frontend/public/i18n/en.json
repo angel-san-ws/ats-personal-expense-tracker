@@ -206,7 +206,12 @@
     "noHistory": "No imports yet",
     "deleteBatch": "Delete this import",
     "deleteConfirm": "Delete \"{{filename}}\" and its {{rows}} imported transaction(s)? This cannot be undone.",
-    "deleted": "Import deleted ({{rows}} transactions removed)"
+    "deleted": "Import deleted ({{rows}} transactions removed)",
+    "screenshotTitle": "Import from notification screenshots",
+    "screenshotHint": "Upload screenshots of your bank's consumption alerts (e.g. BiMovil). Amount, merchant, date and card are read automatically from each notification.",
+    "chooseScreenshots": "Choose screenshots",
+    "screenshotDropHint": "Drag & drop screenshots here or click to browse",
+    "readingScreenshots": "Reading screenshots… the first import may take a bit longer."
   },
   "categories": {
     "title": "Categories",
