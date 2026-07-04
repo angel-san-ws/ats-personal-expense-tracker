@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { ButtonModule } from 'primeng/button';
+import { DrawerModule } from 'primeng/drawer';
 import { MenuModule } from 'primeng/menu';
 import { SelectModule } from 'primeng/select';
 import { AvatarModule } from 'primeng/avatar';
@@ -30,6 +31,7 @@ interface NavLink {
     RouterLinkActive,
     TranslocoDirective,
     ButtonModule,
+    DrawerModule,
     MenuModule,
     SelectModule,
     AvatarModule,
@@ -37,15 +39,26 @@ interface NavLink {
   template: `
     <div class="app-shell" *transloco="let t">
       <header
-        class="flex align-items-center gap-3 px-3 py-2 surface-card shadow-2"
+        class="flex align-items-center gap-2 px-3 py-2 surface-card shadow-2"
         style="position: sticky; top: 0; z-index: 100;"
       >
-        <div class="flex align-items-center gap-2 mr-2">
-          <img src="logo.png" alt="" style="height: 1.75rem; width: 1.75rem" />
-          <span class="font-bold text-lg white-space-nowrap">{{ t('app.title') }}</span>
+        <p-button
+          class="lg:hidden flex-shrink-0"
+          [text]="true"
+          [rounded]="true"
+          icon="pi pi-bars"
+          (onClick)="menuOpen.set(true)"
+          [ariaLabel]="t('nav.menu')"
+        />
+
+        <div class="flex align-items-center gap-2 mr-2 overflow-hidden">
+          <img src="logo.png" alt="" class="flex-shrink-0" style="height: 1.75rem; width: 1.75rem" />
+          <span class="font-bold text-lg white-space-nowrap overflow-hidden text-overflow-ellipsis">
+            {{ t('app.title') }}
+          </span>
         </div>
 
-        <nav class="flex align-items-center gap-1 flex-wrap flex-1">
+        <nav class="hidden lg:flex align-items-center gap-1 flex-wrap flex-1">
           @for (link of navLinks(); track link.path) {
             <a
               [routerLink]="link.path"
@@ -63,8 +76,10 @@ interface NavLink {
             </a>
           }
         </nav>
+        <div class="flex-1 lg:hidden"></div>
 
         <p-button
+          class="flex-shrink-0"
           [text]="true"
           [rounded]="true"
           [icon]="theme.current() === 'dark' ? 'pi pi-sun' : 'pi pi-moon'"
@@ -73,6 +88,7 @@ interface NavLink {
         />
 
         <p-select
+          class="hidden md:inline-flex flex-shrink-0"
           [options]="languages"
           [ngModel]="lang.current()"
           (onChange)="onLanguageChange($event.value)"
@@ -82,6 +98,7 @@ interface NavLink {
         />
 
         <p-button
+          class="flex-shrink-0"
           [text]="true"
           (onClick)="userMenu.toggle($event)"
           styleClass="p-1"
@@ -94,6 +111,51 @@ interface NavLink {
         </p-button>
         <p-menu #userMenu [model]="userMenuItems()" [popup]="true" appendTo="body" />
       </header>
+
+      <p-drawer
+        [visible]="menuOpen()"
+        (visibleChange)="menuOpen.set($event)"
+        [modal]="true"
+        styleClass="w-18rem"
+      >
+        <ng-template #header>
+          <div class="flex align-items-center gap-2">
+            <img src="logo.png" alt="" style="height: 1.75rem; width: 1.75rem" />
+            <span class="font-bold">{{ t('app.title') }}</span>
+          </div>
+        </ng-template>
+
+        <nav class="flex flex-column gap-1">
+          @for (link of navLinks(); track link.path) {
+            <a
+              [routerLink]="link.path"
+              routerLinkActive
+              #rla="routerLinkActive"
+              class="no-underline"
+              (click)="menuOpen.set(false)"
+            >
+              <p-button
+                [label]="t(link.label)"
+                [icon]="link.icon"
+                [text]="!rla.isActive"
+                [outlined]="rla.isActive"
+                styleClass="w-full justify-content-start"
+              />
+            </a>
+          }
+        </nav>
+
+        <div class="mt-4 md:hidden">
+          <p-select
+            [options]="languages"
+            [ngModel]="lang.current()"
+            (onChange)="onLanguageChange($event.value)"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="w-full"
+          />
+        </div>
+      </p-drawer>
 
       <main class="app-content">
         <router-outlet />
@@ -109,6 +171,8 @@ export class MainLayoutComponent implements OnInit {
   private users = inject(UsersService);
   private transloco = inject(TranslocoService);
   private recurring = inject(RecurringExpensesService);
+
+  menuOpen = signal(false);
 
   languages = [
     { label: 'English', value: 'en' as AppLanguage },

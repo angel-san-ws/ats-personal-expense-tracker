@@ -85,6 +85,11 @@ a {
   width: 100%;
 }
 
+/* Let the upload widget's Choose/Import/Cancel bar wrap on narrow screens */
+.p-fileupload-header {
+  flex-wrap: wrap;
+}
+
 .color-swatch {
   width: 1rem;
   height: 1rem;

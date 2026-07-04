@@ -12,7 +12,8 @@
     "concepts": "Conceptos de gasto",
     "settings": "Configuración",
     "logout": "Cerrar sesión",
-    "toggleTheme": "Cambiar modo oscuro"
+    "toggleTheme": "Cambiar modo oscuro",
+    "menu": "Menú"
   },
   "auth": {
     "loginTitle": "Iniciar sesión",

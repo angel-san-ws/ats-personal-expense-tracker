@@ -40,7 +40,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
     <div *transloco="let t">
       <div class="page-header flex align-items-center justify-content-between flex-wrap gap-2">
         <h1>{{ t('expenses.title') }}</h1>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
           <p-button
             icon="pi pi-plus"
             [label]="t('expenses.add')"

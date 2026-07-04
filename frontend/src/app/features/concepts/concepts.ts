@@ -45,12 +45,12 @@ interface CategoryOption {
   ],
   template: `
     <div *transloco="let t">
-      <div class="page-header flex justify-content-between align-items-start">
+      <div class="page-header flex justify-content-between align-items-start flex-wrap gap-2">
         <div>
           <h1>{{ t('concepts.title') }}</h1>
           <p>{{ t('concepts.subtitle') }}</p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
           <p-button
             [label]="t('concepts.autoAssign')"
             icon="pi pi-sparkles"

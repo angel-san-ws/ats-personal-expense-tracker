@@ -29,7 +29,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
           <h1>{{ t('payments.title') }}</h1>
           <p>{{ t('payments.subtitle') }}</p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
           <p-button
             icon="pi pi-plus"
             [label]="t('payments.add')"
