@@ -66,6 +66,20 @@ export class ExpensesService {
     );
   }
 
+  /**
+   * Assign a category to the merchants (concepts) of the given expenses.
+   * Affects every expense of those merchants; null clears the category.
+   */
+  batchAssignCategory(
+    ids: string[],
+    categoryId: string | null,
+  ): Observable<{ concepts: number }> {
+    return this.http.post<{ concepts: number }>(
+      `${API_BASE}/expenses/batch-assign-category`,
+      { ids, categoryId },
+    );
+  }
+
   batchDelete(ids: string[]): Observable<{ deleted: number }> {
     return this.http.post<{ deleted: number }>(
       `${API_BASE}/expenses/batch-delete`,

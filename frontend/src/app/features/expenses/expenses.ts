@@ -7,10 +7,12 @@ import { TagModule } from 'primeng/tag';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TooltipModule } from 'primeng/tooltip';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { FilterBarComponent } from '../shared/filter-bar';
 import { ExpenseFormDialogComponent } from '../shared/expense-form-dialog';
+import { CategorySelectComponent } from '../shared/category-select';
 import { AuthService } from '../../core/auth/auth.service';
 import { AtsCurrencyPipe } from '../../core/currency.pipe';
 import { ExpensesService } from '../../core/services/expenses.service';
@@ -28,8 +30,10 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
     CheckboxModule,
     TooltipModule,
     ButtonModule,
+    DialogModule,
     FilterBarComponent,
     ExpenseFormDialogComponent,
+    CategorySelectComponent,
     AtsCurrencyPipe,
   ],
   template: `
@@ -42,6 +46,14 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
             [label]="t('expenses.add')"
             size="small"
             (onClick)="formDialog.open()"
+          />
+          <p-button
+            icon="pi pi-tag"
+            [label]="t('expenses.categorizeSelected', { count: selected().length })"
+            [outlined]="true"
+            size="small"
+            [disabled]="selectedConceptCount() === 0"
+            (onClick)="openCategorize()"
           />
           <p-button
             icon="pi pi-trash"
@@ -216,6 +228,38 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
       </p-card>
 
       <app-expense-form-dialog #formDialog kind="expense" (saved)="load()" />
+
+      <p-dialog
+        [header]="t('expenses.categorizeHeader')"
+        [visible]="categorizeVisible()"
+        (visibleChange)="categorizeVisible.set($event)"
+        [modal]="true"
+        [style]="{ width: '26rem' }"
+        [dismissableMask]="true"
+      >
+        <div class="flex flex-column gap-3">
+          <span>{{ t('expenses.categorizeNote', { merchants: selectedConceptCount() }) }}</span>
+          <app-category-select
+            [categoryId]="categorizeCategoryId()"
+            (categoryIdChange)="categorizeCategoryId.set($event)"
+            [merchant]="categorizeMerchant()"
+          />
+        </div>
+        <ng-template #footer>
+          <p-button
+            [label]="t('expenses.categorizeCancel')"
+            [text]="true"
+            severity="secondary"
+            (onClick)="categorizeVisible.set(false)"
+          />
+          <p-button
+            [label]="t('expenses.categorizeApply')"
+            icon="pi pi-check"
+            [loading]="categorizing()"
+            (onClick)="applyCategorize()"
+          />
+        </ng-template>
+      </p-dialog>
     </div>
   `,
 })
@@ -236,6 +280,25 @@ export class ExpensesComponent {
   loading = signal(false);
   exporting = signal(false);
   selected = signal<Expense[]>([]);
+
+  categorizeVisible = signal(false);
+  categorizeCategoryId = signal<string | null>(null);
+  categorizing = signal(false);
+
+  /** Distinct merchants (concepts) among the selected rows; payments carry none. */
+  selectedConceptCount = computed(
+    () => new Set(this.selected().map((e) => e.conceptId).filter(Boolean)).size,
+  );
+
+  /** Merchant name for the auto-suggest button — only when the selection has exactly one. */
+  categorizeMerchant = computed(() => {
+    const merchants = new Set(
+      this.selected()
+        .filter((e) => e.conceptId)
+        .map((e) => e.comercio),
+    );
+    return merchants.size === 1 ? [...merchants][0] : '';
+  });
 
   /** Totals of the selected rows, grouped by original currency (like totalsByCurrency). */
   selectedTotalsByCurrency = computed<CurrencyTotal[]>(() => {
@@ -310,6 +373,43 @@ export class ExpensesComponent {
     } finally {
       this.exporting.set(false);
     }
+  }
+
+  openCategorize(): void {
+    if (this.selectedConceptCount() === 0) return;
+    // Preselect the common category when the whole selection already shares one.
+    const ids = new Set(this.selected().map((e) => e.categoryId));
+    this.categorizeCategoryId.set(ids.size === 1 ? [...ids][0] : null);
+    this.categorizeVisible.set(true);
+  }
+
+  applyCategorize(): void {
+    if (this.categorizing()) return;
+    const ids = this.selected().map((e) => e.id);
+    if (ids.length === 0) return;
+    this.categorizing.set(true);
+    this.expensesSvc.batchAssignCategory(ids, this.categorizeCategoryId()).subscribe({
+      next: (res) => {
+        this.categorizing.set(false);
+        this.categorizeVisible.set(false);
+        this.messages.add({
+          severity: 'success',
+          summary: this.transloco.translate('expenses.categorizedCount', {
+            count: res.concepts,
+          }),
+        });
+        this.selected.set([]);
+        this.load();
+      },
+      error: (err) => {
+        this.categorizing.set(false);
+        this.messages.add({
+          severity: 'error',
+          summary: this.transloco.translate('common.error'),
+          detail: err?.error?.message,
+        });
+      },
+    });
   }
 
   confirmDeleteSelected(): void {

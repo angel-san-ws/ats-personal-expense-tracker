@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
 import {
+  BatchAssignCategoryDto,
   BatchDeleteExpensesDto,
   CreateExpenseDto,
   QueryExpensesDto,
@@ -64,6 +65,19 @@ export class ExpensesController {
     @Body() dto: BatchDeleteExpensesDto,
   ) {
     return this.expenses.batchDelete(user.userId, dto.ids);
+  }
+
+  @Post('batch-assign-category')
+  @HttpCode(200)
+  batchAssignCategory(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: BatchAssignCategoryDto,
+  ) {
+    return this.expenses.batchAssignCategory(
+      user.userId,
+      dto.ids,
+      dto.categoryId ?? null,
+    );
   }
 
   @Patch(':id/excluded')

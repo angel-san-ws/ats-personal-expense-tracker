@@ -206,6 +206,33 @@ export class ExpensesService {
     return this.stamping.stampPending(userId, await this.baseCurrency(userId));
   }
 
+  /**
+   * Assign a category to the merchants (concepts) of the selected expenses.
+   * Categories live on the concept, so every expense of those merchants is
+   * affected, not just the selected rows. Payments carry no concept and are
+   * skipped. Returns how many distinct concepts were reassigned.
+   */
+  async batchAssignCategory(
+    userId: string,
+    ids: string[],
+    categoryId: string | null,
+  ): Promise<{ concepts: number }> {
+    const rows = await this.expenses.find({
+      where: { userId, id: In(ids) },
+      select: { conceptId: true },
+    });
+    const conceptIds = [
+      ...new Set(
+        rows.map((r) => r.conceptId).filter((v): v is string => v !== null),
+      ),
+    ];
+    // One call per concept so each merchant records its own learning vote.
+    for (const conceptId of conceptIds) {
+      await this.concepts.assignCategory(userId, conceptId, { categoryId });
+    }
+    return { concepts: conceptIds.length };
+  }
+
   /** Delete a set of expenses/payments owned by the user. */
   async batchDelete(
     userId: string,

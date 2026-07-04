@@ -122,6 +122,22 @@ export class BatchDeleteExpensesDto {
   ids: string[];
 }
 
+export class BatchAssignCategoryDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMaxSize(1000)
+  @IsUUID(undefined, { each: true })
+  ids: string[];
+
+  /**
+   * Assigns the merchants' concepts to this category (affects all their
+   * expenses). null / omitted clears the assignment.
+   */
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string | null;
+}
+
 export class QueryExpensesDto {
   /** ISO date (yyyy-mm-dd) inclusive lower bound on FECHA */
   @IsOptional()
