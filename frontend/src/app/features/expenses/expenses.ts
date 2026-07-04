@@ -185,6 +185,20 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
           </ng-template>
 
           <ng-template #footer>
+            @if (selected().length > 0) {
+              <tr>
+                <td colspan="7" class="text-right font-bold">
+                  {{ t('expenses.selectedTotal', { count: selected().length }) }}
+                </td>
+                <td class="text-right font-bold">
+                  @for (ct of selectedTotalsByCurrency(); track ct.currency) {
+                    <div>{{ ct.total | atsCurrency: ct.currency }}</div>
+                  }
+                </td>
+                <td></td>
+                <td></td>
+              </tr>
+            }
             <tr>
               <td colspan="7" class="text-right font-bold">
                 {{ t('expenses.total') }} ({{ total() }})
@@ -222,6 +236,18 @@ export class ExpensesComponent {
   loading = signal(false);
   exporting = signal(false);
   selected = signal<Expense[]>([]);
+
+  /** Totals of the selected rows, grouped by original currency (like totalsByCurrency). */
+  selectedTotalsByCurrency = computed<CurrencyTotal[]>(() => {
+    const sums = new Map<string, { total: number; count: number }>();
+    for (const e of this.selected()) {
+      const acc = sums.get(e.currency) ?? { total: 0, count: 0 };
+      acc.total += e.valor;
+      acc.count += 1;
+      sums.set(e.currency, acc);
+    }
+    return [...sums.entries()].map(([currency, acc]) => ({ currency, ...acc }));
+  });
 
   private filters: ExpenseQuery = {};
   private page = 0;

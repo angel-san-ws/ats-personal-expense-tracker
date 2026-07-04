@@ -94,6 +94,7 @@
     "include": "En tablero",
     "excludeHint": "Desmarca para excluir este gasto de los totales y gráficas del tablero",
     "total": "Total",
+    "selectedTotal": "Seleccionados ({{count}})",
     "empty": "No se encontraron gastos. Ajusta los filtros o importa un estado de cuenta.",
     "showing": "Mostrando {{count}} de {{total}}",
     "exportExcel": "Exportar Excel",

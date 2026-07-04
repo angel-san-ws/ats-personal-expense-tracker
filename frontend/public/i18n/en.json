@@ -94,6 +94,7 @@
     "include": "In dashboard",
     "excludeHint": "Uncheck to exclude this expense from the dashboard totals and charts",
     "total": "Total",
+    "selectedTotal": "Selected ({{count}})",
     "empty": "No expenses found. Try adjusting the filters or import a statement.",
     "showing": "Showing {{count}} of {{total}}",
     "exportExcel": "Export Excel",

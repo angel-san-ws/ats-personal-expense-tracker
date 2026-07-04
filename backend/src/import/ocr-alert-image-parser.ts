@@ -36,7 +36,7 @@ export class OcrAlertImageParser implements AlertImageParser, OnModuleDestroy {
       `OCR read ${data.text.length} chars, ${alerts.length} alerts recognized`,
     );
     // The raw OCR text is the only way to diagnose unrecognized alerts.
-    this.logger.debug(`OCR text:\n${data.text}`);
+    //this.logger.debug(`OCR text:\n${data.text}`);
     return alerts;
   }
 
