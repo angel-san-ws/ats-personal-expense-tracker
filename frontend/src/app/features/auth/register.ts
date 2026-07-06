@@ -62,9 +62,10 @@ function matchPasswords(control: AbstractControl): ValidationErrors | null {
               pInputText
               id="email"
               type="email"
+              name="email"
               formControlName="email"
               class="w-full"
-              autocomplete="email"
+              autocomplete="username"
             />
           </div>
 
@@ -86,7 +87,9 @@ function matchPasswords(control: AbstractControl): ValidationErrors | null {
             <label for="password">{{ t('auth.password') }}</label>
             <p-password
               inputId="password"
+              name="new-password"
               formControlName="password"
+              [feedback]="false"
               [toggleMask]="true"
               styleClass="w-full"
               inputStyleClass="w-full"
@@ -110,6 +113,7 @@ function matchPasswords(control: AbstractControl): ValidationErrors | null {
             <label for="confirmPassword">{{ t('auth.confirmPassword') }}</label>
             <p-password
               inputId="confirmPassword"
+              name="confirm-password"
               formControlName="confirmPassword"
               [feedback]="false"
               [toggleMask]="true"

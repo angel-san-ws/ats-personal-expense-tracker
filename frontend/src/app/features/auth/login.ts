@@ -51,9 +51,10 @@ import { GoogleSigninComponent } from '../shared/google-signin';
               pInputText
               id="email"
               type="email"
+              name="email"
               formControlName="email"
               class="w-full"
-              autocomplete="email"
+              autocomplete="username"
             />
           </div>
 
@@ -61,6 +62,7 @@ import { GoogleSigninComponent } from '../shared/google-signin';
             <label for="password">{{ t('auth.password') }}</label>
             <p-password
               inputId="password"
+              name="password"
               formControlName="password"
               [feedback]="false"
               [toggleMask]="true"
