@@ -44,6 +44,19 @@
     "language": "Idioma",
     "languageHint": "Tus categorías predeterminadas se crearán en este idioma"
   },
+  "verifyEmail": {
+    "banner": "Confirma tu dirección de correo — revisa tu bandeja de entrada y haz clic en el enlace.",
+    "resend": "Reenviar correo",
+    "sent": "Correo de verificación enviado — revisa tu bandeja de entrada.",
+    "sendFailed": "No se pudo enviar el correo de verificación. Inténtalo más tarde.",
+    "verifying": "Verificando tu correo…",
+    "successTitle": "¡Correo verificado!",
+    "successBody": "Tu dirección de correo ha sido confirmada.",
+    "errorTitle": "La verificación falló",
+    "errorBody": "El enlace es inválido o ha expirado. Inicia sesión y usa “Reenviar correo” para obtener uno nuevo.",
+    "goToApp": "Ir al tablero",
+    "goToLogin": "Iniciar sesión"
+  },
   "dashboard": {
     "title": "Tablero",
     "totalSpend": "Gasto total",
@@ -274,6 +287,8 @@
     "mobilePhone": "Teléfono móvil",
     "mobilePhonePlaceholder": "+502 5555 1234",
     "mobilePhoneHint": "Incluye el código de país (p. ej. +502).",
+    "emailVerified": "Correo electrónico verificado",
+    "emailNotVerified": "Aún sin verificar — revisa tu bandeja de entrada y haz clic en el enlace.",
     "language": "Idioma",
     "currency": "Moneda",
     "english": "Inglés",

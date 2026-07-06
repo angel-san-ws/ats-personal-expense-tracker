@@ -4,6 +4,8 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 
+import { MailService } from '../mail/mail.service';
+import { User } from '../users/user.entity';
 import { UsersService } from '../users/users.service';
 import { PublicUser, toPublicUser } from '../users/user.mapper';
 import { GoogleLoginDto, LoginDto, RegisterDto } from './dto';
@@ -21,6 +23,7 @@ export class AuthService {
   constructor(
     private readonly users: UsersService,
     private readonly jwt: JwtService,
+    private readonly mail: MailService,
     config: ConfigService,
   ) {
     this.googleClientId = config.get<string>('GOOGLE_CLIENT_ID', '');
@@ -35,7 +38,22 @@ export class AuthService {
       dto.language,
       dto.theme,
     );
+    // Fire-and-forget: the verification email must not delay or fail signup.
+    // MailService logs its own failures; swallow the rest (e.g. DB errors)
+    // so they can't become unhandled rejections.
+    void this.sendVerification(user).catch(() => undefined);
     return this.buildResult(user.id, user.email, toPublicUser(user));
+  }
+
+  /** Issue a fresh verification token and email it. Returns whether it was sent. */
+  async sendVerification(user: User): Promise<boolean> {
+    const token = await this.users.issueEmailVerificationToken(user.id);
+    return this.mail.sendVerificationEmail(
+      user.email,
+      user.name,
+      token,
+      user.language,
+    );
   }
 
   async login(dto: LoginDto): Promise<AuthResult> {
@@ -77,6 +95,9 @@ export class AuthService {
         dto.language,
         dto.theme,
       );
+    } else if (!user.emailVerifiedAt) {
+      // Google just proved ownership — any pending verification is moot.
+      user = await this.users.markEmailVerified(user);
     }
     return this.buildResult(user.id, user.email, toPublicUser(user));
   }

@@ -47,6 +47,14 @@ export class LoginDto {
   password: string;
 }
 
+export class VerifyEmailDto {
+  /** Raw verification token from the emailed link. */
+  @IsString()
+  @MinLength(32)
+  @MaxLength(128)
+  token: string;
+}
+
 export class GoogleLoginDto {
   /** Google ID token (JWT) issued by Google Identity Services. */
   @IsString()

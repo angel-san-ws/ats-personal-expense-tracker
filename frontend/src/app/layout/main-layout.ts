@@ -112,6 +112,31 @@ interface NavLink {
         <p-menu #userMenu [model]="userMenuItems()" [popup]="true" appendTo="body" />
       </header>
 
+      @if (showVerifyBanner()) {
+        <div
+          class="flex align-items-center justify-content-center flex-wrap gap-2 px-3 py-2 text-sm"
+          style="background: var(--p-message-warn-background, var(--p-yellow-100)); color: var(--p-message-warn-color, var(--p-yellow-900)); border-bottom: 1px solid var(--p-message-warn-border-color, transparent);"
+        >
+          <i class="pi pi-envelope"></i>
+          @if (verifyEmailState() === 'sent') {
+            <span class="font-medium">{{ t('verifyEmail.sent') }}</span>
+          } @else if (verifyEmailState() === 'failed') {
+            <span>{{ t('verifyEmail.sendFailed') }}</span>
+          } @else {
+            <span>{{ t('verifyEmail.banner') }}</span>
+          }
+          @if (verifyEmailState() !== 'sent') {
+            <p-button
+              [label]="t('verifyEmail.resend')"
+              size="small"
+              [text]="true"
+              [loading]="verifyEmailState() === 'sending'"
+              (onClick)="resendVerification()"
+            />
+          }
+        </div>
+      }
+
       <p-drawer
         [visible]="menuOpen()"
         (visibleChange)="menuOpen.set($event)"
@@ -174,6 +199,9 @@ export class MainLayoutComponent implements OnInit {
 
   menuOpen = signal(false);
 
+  verifyEmailState = signal<'idle' | 'sending' | 'sent' | 'failed'>('idle');
+  showVerifyBanner = computed(() => this.auth.user()?.emailVerified === false);
+
   languages = [
     { label: 'English', value: 'en' as AppLanguage },
     { label: 'Español', value: 'es' as AppLanguage },
@@ -225,6 +253,21 @@ export class MainLayoutComponent implements OnInit {
       },
     ];
   });
+
+  resendVerification(): void {
+    this.verifyEmailState.set('sending');
+    this.auth.resendVerification().subscribe({
+      next: (res) => {
+        if (res.alreadyVerified) {
+          // e.g. verified in another tab — refresh the user to drop the banner.
+          this.auth.loadMe().subscribe({ error: () => {} });
+          return;
+        }
+        this.verifyEmailState.set(res.sent ? 'sent' : 'failed');
+      },
+      error: () => this.verifyEmailState.set('failed'),
+    });
+  }
 
   onLanguageChange(value: AppLanguage): void {
     this.lang.use(value);

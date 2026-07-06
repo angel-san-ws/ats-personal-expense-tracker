@@ -7,12 +7,18 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
+import { createHash, randomBytes } from 'crypto';
 
 import { AppLanguage, AppTheme, SavedFilter, User } from './user.entity';
 import { Category } from '../categories/category.entity';
 import { ChangePasswordDto, UpdateProfileDto, UpdateSettingsDto } from './dto';
 import { defaultCategoriesFor } from '../common/default-categories';
 import { RateStampingService } from '../rates/rate-stamping.service';
+
+const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+
+const sha256 = (value: string) =>
+  createHash('sha256').update(value).digest('hex');
 
 @Injectable()
 export class UsersService {
@@ -68,12 +74,55 @@ export class UsersService {
       email: email.toLowerCase().trim(),
       name: name.trim(),
       passwordHash: null,
+      // Google only issues tokens for verified addresses, so no email round-trip.
+      emailVerifiedAt: new Date(),
       language,
       theme,
     });
     const saved = await this.users.save(user);
     await this.seedDefaultCategories(saved.id, language);
     return saved;
+  }
+
+  /**
+   * Create a fresh verification token for the user and return the raw value
+   * (to be emailed). Only its SHA-256 hash is stored; re-issuing invalidates
+   * any previous link.
+   */
+  async issueEmailVerificationToken(userId: string): Promise<string> {
+    const raw = randomBytes(32).toString('hex');
+    await this.users.update(userId, {
+      emailVerificationTokenHash: sha256(raw),
+      emailVerificationExpiresAt: new Date(
+        Date.now() + VERIFICATION_TOKEN_TTL_MS,
+      ),
+    });
+    return raw;
+  }
+
+  /** Consume a verification token from an emailed link. */
+  async verifyEmailByToken(rawToken: string): Promise<User> {
+    const user = await this.users.findOne({
+      where: { emailVerificationTokenHash: sha256(rawToken) },
+    });
+    if (
+      !user ||
+      !user.emailVerificationExpiresAt ||
+      user.emailVerificationExpiresAt.getTime() < Date.now()
+    ) {
+      throw new BadRequestException(
+        'Verification link is invalid or has expired',
+      );
+    }
+    return this.markEmailVerified(user);
+  }
+
+  /** Stamp the email as verified (also used when Google proves ownership). */
+  async markEmailVerified(user: User): Promise<User> {
+    user.emailVerifiedAt = user.emailVerifiedAt ?? new Date();
+    user.emailVerificationTokenHash = null;
+    user.emailVerificationExpiresAt = null;
+    return this.users.save(user);
   }
 
   private async seedDefaultCategories(

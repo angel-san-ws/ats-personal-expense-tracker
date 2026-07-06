@@ -60,6 +60,22 @@ export class AuthService {
       .pipe(tap((res) => this.setSession(res)));
   }
 
+  /** Consume the token from an emailed verification link (public endpoint). */
+  verifyEmail(token: string): Observable<{ verified: boolean; email: string }> {
+    return this.http.post<{ verified: boolean; email: string }>(
+      `${API_BASE}/auth/verify-email`,
+      { token },
+    );
+  }
+
+  /** Re-send the verification email for the logged-in user. */
+  resendVerification(): Observable<{ sent: boolean; alreadyVerified: boolean }> {
+    return this.http.post<{ sent: boolean; alreadyVerified: boolean }>(
+      `${API_BASE}/auth/resend-verification`,
+      {},
+    );
+  }
+
   /** Load the current user from a stored token (on app start). */
   loadMe(): Observable<User> {
     return this.http

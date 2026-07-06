@@ -44,6 +44,19 @@
     "language": "Language",
     "languageHint": "Your default categories will be created in this language"
   },
+  "verifyEmail": {
+    "banner": "Please verify your email address — check your inbox for the confirmation link.",
+    "resend": "Resend email",
+    "sent": "Verification email sent — check your inbox.",
+    "sendFailed": "Could not send the verification email. Please try again later.",
+    "verifying": "Verifying your email…",
+    "successTitle": "Email verified!",
+    "successBody": "Your email address has been confirmed.",
+    "errorTitle": "Verification failed",
+    "errorBody": "The link is invalid or has expired. Sign in and use “Resend email” to get a new one.",
+    "goToApp": "Go to dashboard",
+    "goToLogin": "Sign in"
+  },
   "dashboard": {
     "title": "Dashboard",
     "totalSpend": "Total spend",
@@ -274,6 +287,8 @@
     "mobilePhone": "Mobile phone",
     "mobilePhonePlaceholder": "+502 5555 1234",
     "mobilePhoneHint": "Include the country code (e.g. +502).",
+    "emailVerified": "Email address verified",
+    "emailNotVerified": "Not verified yet — check your inbox for the confirmation link.",
     "language": "Language",
     "currency": "Currency",
     "english": "English",

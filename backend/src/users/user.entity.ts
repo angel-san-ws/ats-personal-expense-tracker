@@ -38,6 +38,31 @@ export class User {
   @Column({ name: 'password_hash', type: 'varchar', nullable: true })
   passwordHash: string | null;
 
+  /**
+   * When the user proved ownership of their email. Stamped immediately for
+   * Google sign-ins (Google already verified it); NULL until the verification
+   * link is clicked for password registrations. Verification is soft — it
+   * never blocks login, it only drives the "verify your email" banner.
+   */
+  @Column({ name: 'email_verified_at', type: 'timestamptz', nullable: true })
+  emailVerifiedAt: Date | null;
+
+  /** SHA-256 hex of the pending verification token (raw token only goes in the email). */
+  @Column({
+    name: 'email_verification_token_hash',
+    type: 'varchar',
+    length: 64,
+    nullable: true,
+  })
+  emailVerificationTokenHash: string | null;
+
+  @Column({
+    name: 'email_verification_expires_at',
+    type: 'timestamptz',
+    nullable: true,
+  })
+  emailVerificationExpiresAt: Date | null;
+
   @Column()
   name: string;
 

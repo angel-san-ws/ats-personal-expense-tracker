@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { GoogleLoginDto, LoginDto, RegisterDto } from './dto';
+import { GoogleLoginDto, LoginDto, RegisterDto, VerifyEmailDto } from './dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import type { AuthUser } from './current-user.decorator';
@@ -27,6 +27,22 @@ export class AuthController {
   @Post('google')
   googleLogin(@Body() dto: GoogleLoginDto) {
     return this.auth.googleLogin(dto);
+  }
+
+  /** Public: consumes the token from the emailed verification link. */
+  @Post('verify-email')
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    const user = await this.users.verifyEmailByToken(dto.token);
+    return { verified: true, email: user.email };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('resend-verification')
+  async resendVerification(@CurrentUser() current: AuthUser) {
+    const user = await this.users.findById(current.userId);
+    if (user.emailVerifiedAt) return { sent: false, alreadyVerified: true };
+    const sent = await this.auth.sendVerification(user);
+    return { sent, alreadyVerified: false };
   }
 
   @UseGuards(JwtAuthGuard)

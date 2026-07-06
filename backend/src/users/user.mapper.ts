@@ -5,6 +5,7 @@ export interface PublicUser {
   email: string;
   name: string;
   mobilePhone: string | null;
+  emailVerified: boolean;
   language: 'en' | 'es';
   currency: string;
   theme: 'light' | 'dark';
@@ -18,6 +19,7 @@ export function toPublicUser(user: User): PublicUser {
     email: user.email,
     name: user.name,
     mobilePhone: user.mobilePhone ?? null,
+    emailVerified: user.emailVerifiedAt !== null,
     language: user.language,
     currency: user.currency,
     theme: user.theme,

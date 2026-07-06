@@ -15,6 +15,12 @@ export const routes: Routes = [
       import('./features/auth/register').then((m) => m.RegisterComponent),
   },
   {
+    // No guard: the emailed link must work whether or not the user is logged in.
+    path: 'verify-email',
+    loadComponent: () =>
+      import('./features/auth/verify-email').then((m) => m.VerifyEmailComponent),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () =>

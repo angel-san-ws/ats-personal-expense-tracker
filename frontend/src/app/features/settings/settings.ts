@@ -42,6 +42,17 @@ import { AppLanguage, AppTheme } from '../../core/models';
               <div class="flex flex-column gap-1">
                 <label>{{ t('settings.email') }}</label>
                 <input pInputText [value]="auth.user()?.email" disabled class="w-full" />
+                @if (auth.user()?.emailVerified) {
+                  <small class="flex align-items-center gap-1" style="color: var(--p-green-500)">
+                    <i class="pi pi-verified"></i>
+                    {{ t('settings.emailVerified') }}
+                  </small>
+                } @else {
+                  <small class="flex align-items-center gap-1 text-color-secondary">
+                    <i class="pi pi-exclamation-circle"></i>
+                    {{ t('settings.emailNotVerified') }}
+                  </small>
+                }
               </div>
               <div class="flex flex-column gap-1">
                 <label>{{ t('settings.name') }}</label>
