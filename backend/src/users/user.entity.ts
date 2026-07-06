@@ -41,6 +41,10 @@ export class User {
   @Column()
   name: string;
 
+  /** E.164-style number incl. country code (e.g. +50255512345); used for WhatsApp. */
+  @Column({ name: 'mobile_phone', type: 'varchar', length: 20, nullable: true })
+  mobilePhone: string | null;
+
   @Column({ type: 'varchar', length: 5, default: 'en' })
   language: AppLanguage;
 

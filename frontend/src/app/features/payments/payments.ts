@@ -48,7 +48,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
         </div>
       </div>
 
-      <app-filter-bar persistKey="payments" (filtersChange)="onFilters($event)" />
+      <app-filter-bar persistKey="payments" [collapsible]="true" (filtersChange)="onFilters($event)" />
 
       <div class="grid mb-2">
         <div class="col-12 md:col-6 lg:col-4">

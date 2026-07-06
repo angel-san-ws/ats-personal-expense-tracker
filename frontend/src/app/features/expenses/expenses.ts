@@ -98,7 +98,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
         </div>
       </div>
 
-      <app-filter-bar persistKey="expenses" (filtersChange)="onFilters($event)" />
+      <app-filter-bar persistKey="expenses" [collapsible]="true" (filtersChange)="onFilters($event)" />
 
       <p-card>
         <p-table

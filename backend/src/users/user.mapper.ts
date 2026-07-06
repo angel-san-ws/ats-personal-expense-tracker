@@ -4,6 +4,7 @@ export interface PublicUser {
   id: string;
   email: string;
   name: string;
+  mobilePhone: string | null;
   language: 'en' | 'es';
   currency: string;
   theme: 'light' | 'dark';
@@ -16,6 +17,7 @@ export function toPublicUser(user: User): PublicUser {
     id: user.id,
     email: user.email,
     name: user.name,
+    mobilePhone: user.mobilePhone ?? null,
     language: user.language,
     currency: user.currency,
     theme: user.theme,

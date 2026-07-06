@@ -33,6 +33,7 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
       <app-filter-bar
         persistKey="dashboard"
         [allowSave]="true"
+        [collapsible]="true"
         (filtersChange)="onFilters($event)"
       />
 

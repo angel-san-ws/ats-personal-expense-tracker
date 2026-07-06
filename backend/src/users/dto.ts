@@ -14,6 +14,14 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(120)
   name?: string;
+
+  /** Empty string clears the number. */
+  @IsOptional()
+  @IsString()
+  @Matches(/^$|^\+?[\d\s()-]{7,20}$/, {
+    message: 'mobilePhone must be a phone number (digits, optional leading +)',
+  })
+  mobilePhone?: string;
 }
 
 export class UpdateSettingsDto {

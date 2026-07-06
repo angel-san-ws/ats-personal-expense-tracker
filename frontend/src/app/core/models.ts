@@ -17,6 +17,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  mobilePhone: string | null;
   language: AppLanguage;
   currency: string;
   theme: AppTheme;

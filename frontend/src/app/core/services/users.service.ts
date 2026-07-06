@@ -8,8 +8,11 @@ import { AppLanguage, AppTheme, SavedFilterState, User } from '../models';
 export class UsersService {
   private http = inject(HttpClient);
 
-  updateProfile(name: string): Observable<User> {
-    return this.http.patch<User>(`${API_BASE}/users/me/profile`, { name });
+  updateProfile(name: string, mobilePhone: string): Observable<User> {
+    return this.http.patch<User>(`${API_BASE}/users/me/profile`, {
+      name,
+      mobilePhone,
+    });
   }
 
   updateSettings(settings: {

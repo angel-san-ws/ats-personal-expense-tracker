@@ -89,6 +89,9 @@ export class UsersService {
   async updateProfile(userId: string, dto: UpdateProfileDto): Promise<User> {
     const user = await this.findById(userId);
     if (dto.name !== undefined) user.name = dto.name.trim();
+    if (dto.mobilePhone !== undefined) {
+      user.mobilePhone = dto.mobilePhone.trim() || null;
+    }
     return this.users.save(user);
   }
 

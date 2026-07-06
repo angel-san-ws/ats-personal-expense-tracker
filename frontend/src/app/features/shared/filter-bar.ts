@@ -6,6 +6,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
+import { BadgeModule } from 'primeng/badge';
 
 import { ExpensesService } from '../../core/services/expenses.service';
 import { CategoriesService } from '../../core/services/categories.service';
@@ -28,146 +29,166 @@ interface Option {
     SelectModule,
     InputTextModule,
     ButtonModule,
+    BadgeModule,
   ],
   template: `
-    <div
-      class="surface-card border-round p-3 mb-3 flex flex-wrap gap-3 align-items-end"
-      *transloco="let t"
-    >
-      <div class="flex flex-column gap-1">
-        <label class="text-sm">{{ t('filters.period') }}</label>
-        <p-select
-          [(ngModel)]="period"
-          (onChange)="onPeriodChange($event.value)"
-          [options]="periodOptions"
-          optionValue="value"
-          styleClass="w-11rem"
-          appendTo="body"
+    <div class="surface-card border-round p-3 mb-3" *transloco="let t">
+      @if (collapsible) {
+        <div
+          class="flex align-items-center gap-2 cursor-pointer select-none"
+          role="button"
+          tabindex="0"
+          (click)="toggleCollapsed()"
+          (keyup.enter)="toggleCollapsed()"
         >
-          <ng-template #selectedItem let-o>{{ t(o.labelKey) }}</ng-template>
-          <ng-template #item let-o>{{ t(o.labelKey) }}</ng-template>
-        </p-select>
-      </div>
-
-      <div class="flex flex-column gap-1">
-        <label class="text-sm">{{ t('filters.dateFrom') }}</label>
-        <p-datepicker
-          [(ngModel)]="dateFrom"
-          (onSelect)="period = 'custom'"
-          (onClearClick)="period = 'custom'"
-          dateFormat="yy-mm-dd"
-          [showIcon]="true"
-          [showButtonBar]="true"
-          styleClass="w-11rem"
-          appendTo="body"
-        />
-      </div>
-
-      <div class="flex flex-column gap-1">
-        <label class="text-sm">{{ t('filters.dateTo') }}</label>
-        <p-datepicker
-          [(ngModel)]="dateTo"
-          (onSelect)="period = 'custom'"
-          (onClearClick)="period = 'custom'"
-          dateFormat="yy-mm-dd"
-          [showIcon]="true"
-          [showButtonBar]="true"
-          styleClass="w-11rem"
-          appendTo="body"
-        />
-      </div>
-
-      <div class="flex flex-column gap-1">
-        <label class="text-sm">{{ t('filters.card') }}</label>
-        <p-select
-          [(ngModel)]="card"
-          [options]="cardOptions()"
-          optionLabel="label"
-          optionValue="value"
-          [showClear]="true"
-          [placeholder]="t('filters.allCards')"
-          styleClass="w-11rem"
-          appendTo="body"
-        />
-      </div>
-
-      @if (currencyOptions().length > 1) {
-        <div class="flex flex-column gap-1">
-          <label class="text-sm">{{ t('filters.currency') }}</label>
-          <p-select
-            [(ngModel)]="currency"
-            [options]="currencyOptions()"
-            optionLabel="label"
-            optionValue="value"
-            [showClear]="true"
-            [placeholder]="t('filters.allCurrencies')"
-            styleClass="w-9rem"
-            appendTo="body"
-          />
+          <i class="pi" [class.pi-chevron-right]="collapsed()" [class.pi-chevron-down]="!collapsed()"></i>
+          <span class="font-medium">{{ t('filters.title') }}</span>
+          @if (collapsed() && activeFilterCount() > 0) {
+            <p-badge [value]="activeFilterCount()" />
+          }
         </div>
       }
+      @if (!collapsible || !collapsed()) {
+        <div
+          class="flex flex-wrap gap-3 align-items-end"
+          [class.mt-3]="collapsible"
+        >
+          <div class="flex flex-column gap-1">
+            <label class="text-sm">{{ t('filters.period') }}</label>
+            <p-select
+              [(ngModel)]="period"
+              (onChange)="onPeriodChange($event.value)"
+              [options]="periodOptions"
+              optionValue="value"
+              styleClass="w-11rem"
+              appendTo="body"
+            >
+              <ng-template #selectedItem let-o>{{ t(o.labelKey) }}</ng-template>
+              <ng-template #item let-o>{{ t(o.labelKey) }}</ng-template>
+            </p-select>
+          </div>
 
-      <div class="flex flex-column gap-1">
-        <label class="text-sm">{{ t('filters.category') }}</label>
-        <p-select
-          [(ngModel)]="category"
-          (onChange)="apply()"
-          [options]="categoryOptions()"
-          optionLabel="label"
-          optionValue="value"
-          [showClear]="true"
-          [placeholder]="t('filters.allCategories')"
-          styleClass="w-12rem"
-          appendTo="body"
-        />
-      </div>
+          <div class="flex flex-column gap-1">
+            <label class="text-sm">{{ t('filters.dateFrom') }}</label>
+            <p-datepicker
+              [(ngModel)]="dateFrom"
+              (onSelect)="period = 'custom'"
+              (onClearClick)="period = 'custom'"
+              dateFormat="yy-mm-dd"
+              [showIcon]="true"
+              [showButtonBar]="true"
+              styleClass="w-11rem"
+              appendTo="body"
+            />
+          </div>
 
-      <div class="flex flex-column gap-1">
-        <label class="text-sm">{{ t('filters.concept') }}</label>
-        <p-select
-          [(ngModel)]="concept"
-          [options]="conceptOptions()"
-          optionLabel="label"
-          optionValue="value"
-          [showClear]="true"
-          [filter]="true"
-          filterBy="label"
-          [placeholder]="'—'"
-          styleClass="w-14rem"
-          appendTo="body"
-        />
-      </div>
+          <div class="flex flex-column gap-1">
+            <label class="text-sm">{{ t('filters.dateTo') }}</label>
+            <p-datepicker
+              [(ngModel)]="dateTo"
+              (onSelect)="period = 'custom'"
+              (onClearClick)="period = 'custom'"
+              dateFormat="yy-mm-dd"
+              [showIcon]="true"
+              [showButtonBar]="true"
+              styleClass="w-11rem"
+              appendTo="body"
+            />
+          </div>
 
-      <div class="flex flex-column gap-1 flex-1" style="min-width: 12rem">
-        <label class="text-sm">{{ t('filters.search') }}</label>
-        <input
-          pInputText
-          [(ngModel)]="search"
-          class="w-full"
-          (keyup.enter)="apply()"
-        />
-      </div>
+          <div class="flex flex-column gap-1">
+            <label class="text-sm">{{ t('filters.card') }}</label>
+            <p-select
+              [(ngModel)]="card"
+              [options]="cardOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [showClear]="true"
+              [placeholder]="t('filters.allCards')"
+              styleClass="w-11rem"
+              appendTo="body"
+            />
+          </div>
 
-      <div class="flex gap-2">
-        <p-button [label]="t('filters.apply')" icon="pi pi-filter" (onClick)="apply()" />
-        <p-button
-          [label]="t('filters.clear')"
-          icon="pi pi-times"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="clear()"
-        />
-        @if (allowSave && persistKey) {
-          <p-button
-            [label]="t(savedRecently() ? 'filters.saved' : 'filters.save')"
-            [icon]="savedRecently() ? 'pi pi-check' : 'pi pi-bookmark'"
-            severity="secondary"
-            [outlined]="true"
-            [loading]="saving()"
-            (onClick)="save()"
-          />
-        }
-      </div>
+          @if (currencyOptions().length > 1) {
+            <div class="flex flex-column gap-1">
+              <label class="text-sm">{{ t('filters.currency') }}</label>
+              <p-select
+                [(ngModel)]="currency"
+                [options]="currencyOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="true"
+                [placeholder]="t('filters.allCurrencies')"
+                styleClass="w-9rem"
+                appendTo="body"
+              />
+            </div>
+          }
+
+          <div class="flex flex-column gap-1">
+            <label class="text-sm">{{ t('filters.category') }}</label>
+            <p-select
+              [(ngModel)]="category"
+              (onChange)="apply()"
+              [options]="categoryOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [showClear]="true"
+              [placeholder]="t('filters.allCategories')"
+              styleClass="w-12rem"
+              appendTo="body"
+            />
+          </div>
+
+          <div class="flex flex-column gap-1">
+            <label class="text-sm">{{ t('filters.concept') }}</label>
+            <p-select
+              [(ngModel)]="concept"
+              [options]="conceptOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [showClear]="true"
+              [filter]="true"
+              filterBy="label"
+              [placeholder]="'—'"
+              styleClass="w-14rem"
+              appendTo="body"
+            />
+          </div>
+
+          <div class="flex flex-column gap-1 flex-1" style="min-width: 12rem">
+            <label class="text-sm">{{ t('filters.search') }}</label>
+            <input
+              pInputText
+              [(ngModel)]="search"
+              class="w-full"
+              (keyup.enter)="apply()"
+            />
+          </div>
+
+          <div class="flex gap-2">
+            <p-button [label]="t('filters.apply')" icon="pi pi-filter" (onClick)="apply()" />
+            <p-button
+              [label]="t('filters.clear')"
+              icon="pi pi-times"
+              severity="secondary"
+              [outlined]="true"
+              (onClick)="clear()"
+            />
+            @if (allowSave && persistKey) {
+              <p-button
+                [label]="t(savedRecently() ? 'filters.saved' : 'filters.save')"
+                [icon]="savedRecently() ? 'pi pi-check' : 'pi pi-bookmark'"
+                severity="secondary"
+                [outlined]="true"
+                [loading]="saving()"
+                (onClick)="save()"
+              />
+            }
+          </div>
+        </div>
+      }
     </div>
   `,
 })
@@ -188,7 +209,12 @@ export class FilterBarComponent implements OnInit {
    */
   @Input() allowSave = false;
 
+  /** Renders a "Filters" header that collapses/expands the whole bar. */
+  @Input() collapsible = false;
+
   @Output() filtersChange = new EventEmitter<ExpenseQuery>();
+
+  collapsed = signal(false);
 
   saving = signal(false);
   savedRecently = signal(false);
@@ -247,6 +273,32 @@ export class FilterBarComponent implements OnInit {
     }
     this.applyQueryParams();
     this.apply();
+    if (this.collapsible && this.persistKey) {
+      this.collapsed.set(sessionStorage.getItem(this.collapsedKey) === '1');
+    }
+  }
+
+  private get collapsedKey(): string {
+    return `ats-filters-collapsed:${this.persistKey}`;
+  }
+
+  toggleCollapsed(): void {
+    this.collapsed.update((c) => !c);
+    if (this.persistKey) {
+      sessionStorage.setItem(this.collapsedKey, this.collapsed() ? '1' : '0');
+    }
+  }
+
+  /** How many filters are set, shown as a badge while collapsed. */
+  activeFilterCount(): number {
+    return [
+      this.dateFrom || this.dateTo,
+      this.card,
+      this.currency,
+      this.category,
+      this.concept,
+      this.search.trim(),
+    ].filter(Boolean).length;
   }
 
   /**

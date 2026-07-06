@@ -47,6 +47,17 @@ import { AppLanguage, AppTheme } from '../../core/models';
                 <label>{{ t('settings.name') }}</label>
                 <input pInputText [(ngModel)]="name" class="w-full" />
               </div>
+              <div class="flex flex-column gap-1">
+                <label>{{ t('settings.mobilePhone') }}</label>
+                <input
+                  pInputText
+                  type="tel"
+                  [(ngModel)]="mobilePhone"
+                  [placeholder]="t('settings.mobilePhonePlaceholder')"
+                  class="w-full"
+                />
+                <small class="text-color-secondary">{{ t('settings.mobilePhoneHint') }}</small>
+              </div>
               <div>
                 <p-button
                   [label]="t('settings.saveProfile')"
@@ -162,6 +173,7 @@ export class SettingsComponent implements OnInit {
   private transloco = inject(TranslocoService);
 
   name = '';
+  mobilePhone = '';
   language: AppLanguage = 'en';
   currency = 'GTQ';
   theme: AppTheme = 'light';
@@ -196,6 +208,7 @@ export class SettingsComponent implements OnInit {
     const user = this.auth.user();
     if (user) {
       this.name = user.name;
+      this.mobilePhone = user.mobilePhone ?? '';
       this.language = user.language;
       this.currency = user.currency;
       this.theme = user.theme;
@@ -218,7 +231,9 @@ export class SettingsComponent implements OnInit {
 
   saveProfile(): void {
     this.savingProfile.set(true);
-    this.users.updateProfile(this.name.trim()).subscribe({
+    this.users
+      .updateProfile(this.name.trim(), this.mobilePhone.trim())
+      .subscribe({
       next: (user) => {
         this.auth.setUser(user);
         this.savingProfile.set(false);
