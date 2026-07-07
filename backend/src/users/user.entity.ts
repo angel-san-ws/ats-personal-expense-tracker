@@ -63,6 +63,22 @@ export class User {
   })
   emailVerificationExpiresAt: Date | null;
 
+  /** SHA-256 hex of the pending password-reset token (raw token only goes in the email). */
+  @Column({
+    name: 'password_reset_token_hash',
+    type: 'varchar',
+    length: 64,
+    nullable: true,
+  })
+  passwordResetTokenHash: string | null;
+
+  @Column({
+    name: 'password_reset_expires_at',
+    type: 'timestamptz',
+    nullable: true,
+  })
+  passwordResetExpiresAt: Date | null;
+
   @Column()
   name: string;
 

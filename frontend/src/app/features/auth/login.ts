@@ -72,6 +72,12 @@ import { GoogleSigninComponent } from '../shared/google-signin';
             />
           </div>
 
+          <div class="text-right">
+            <a routerLink="/forgot-password" class="text-sm font-medium" style="color: var(--p-primary-color)">
+              {{ t('auth.forgotPassword') }}
+            </a>
+          </div>
+
           @if (error()) {
             <p-message severity="error" [text]="t('auth.loginError')" />
           }

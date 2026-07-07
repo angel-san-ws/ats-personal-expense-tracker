@@ -55,6 +55,25 @@ export class VerifyEmailDto {
   token: string;
 }
 
+export class ForgotPasswordDto {
+  @IsEmail()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  /** Raw reset token from the emailed link. */
+  @IsString()
+  @MinLength(32)
+  @MaxLength(128)
+  token: string;
+
+  @IsString()
+  @MinLength(8)
+  @MaxLength(72)
+  @Matches(STRONG_PASSWORD_REGEX, { message: STRONG_PASSWORD_MESSAGE })
+  password: string;
+}
+
 export class GoogleLoginDto {
   /** Google ID token (JWT) issued by Google Identity Services. */
   @IsString()

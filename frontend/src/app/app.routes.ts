@@ -15,6 +15,22 @@ export const routes: Routes = [
       import('./features/auth/register').then((m) => m.RegisterComponent),
   },
   {
+    path: 'forgot-password',
+    canActivate: [guestGuard],
+    loadComponent: () =>
+      import('./features/auth/forgot-password').then(
+        (m) => m.ForgotPasswordComponent,
+      ),
+  },
+  {
+    // No guard: the emailed link must work whether or not the user is logged in.
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./features/auth/reset-password').then(
+        (m) => m.ResetPasswordComponent,
+      ),
+  },
+  {
     // No guard: the emailed link must work whether or not the user is logged in.
     path: 'verify-email',
     loadComponent: () =>

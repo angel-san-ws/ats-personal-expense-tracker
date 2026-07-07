@@ -42,7 +42,25 @@
     "ruleNumber": "Un número",
     "ruleSpecial": "Un carácter especial (p. ej. !@#$%)",
     "language": "Idioma",
-    "languageHint": "Tus categorías predeterminadas se crearán en este idioma"
+    "languageHint": "Tus categorías predeterminadas se crearán en este idioma",
+    "forgotPassword": "¿Olvidaste tu contraseña?"
+  },
+  "passwordReset": {
+    "requestTitle": "Restablece tu contraseña",
+    "requestSubtitle": "Ingresa tu correo y te enviaremos un enlace para restablecerla",
+    "sendLink": "Enviar enlace",
+    "sendError": "No se pudo enviar el correo. Inténtalo más tarde.",
+    "sentTitle": "Revisa tu bandeja de entrada",
+    "sentBody": "Si existe una cuenta con ese correo, te enviamos un enlace para restablecer la contraseña. Es válido por 1 hora.",
+    "resetTitle": "Elige una nueva contraseña",
+    "resetSubtitle": "Ingresa y confirma tu nueva contraseña",
+    "reset": "Restablecer contraseña",
+    "successTitle": "¡Contraseña actualizada!",
+    "successBody": "Ya puedes iniciar sesión con tu nueva contraseña.",
+    "errorTitle": "El restablecimiento falló",
+    "errorBody": "El enlace es inválido o ha expirado. Solicita uno nuevo para continuar.",
+    "requestNew": "Solicitar un nuevo enlace",
+    "backToLogin": "Volver a iniciar sesión"
   },
   "verifyEmail": {
     "banner": "Confirma tu dirección de correo — revisa tu bandeja de entrada y haz clic en el enlace.",

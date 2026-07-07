@@ -1,6 +1,13 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { GoogleLoginDto, LoginDto, RegisterDto, VerifyEmailDto } from './dto';
+import {
+  ForgotPasswordDto,
+  GoogleLoginDto,
+  LoginDto,
+  RegisterDto,
+  ResetPasswordDto,
+  VerifyEmailDto,
+} from './dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import type { AuthUser } from './current-user.decorator';
@@ -27,6 +34,21 @@ export class AuthController {
   @Post('google')
   googleLogin(@Body() dto: GoogleLoginDto) {
     return this.auth.googleLogin(dto);
+  }
+
+  /** Public: emails a password-reset link. Always reports success so the
+   * response doesn't reveal whether the address is registered. */
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.auth.forgotPassword(dto);
+    return { sent: true };
+  }
+
+  /** Public: consumes the token from the emailed reset link. */
+  @Post('reset-password')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    const user = await this.users.resetPasswordByToken(dto.token, dto.password);
+    return { reset: true, email: user.email };
   }
 
   /** Public: consumes the token from the emailed verification link. */

@@ -76,6 +76,25 @@ export class AuthService {
     );
   }
 
+  /** Request a password-reset email (public; always reports success). */
+  forgotPassword(email: string): Observable<{ sent: boolean }> {
+    return this.http.post<{ sent: boolean }>(
+      `${API_BASE}/auth/forgot-password`,
+      { email },
+    );
+  }
+
+  /** Consume the token from an emailed reset link and set the new password. */
+  resetPassword(
+    token: string,
+    password: string,
+  ): Observable<{ reset: boolean; email: string }> {
+    return this.http.post<{ reset: boolean; email: string }>(
+      `${API_BASE}/auth/reset-password`,
+      { token, password },
+    );
+  }
+
   /** Load the current user from a stored token (on app start). */
   loadMe(): Observable<User> {
     return this.http

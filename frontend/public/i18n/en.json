@@ -42,7 +42,25 @@
     "ruleNumber": "A number",
     "ruleSpecial": "A special character (e.g. !@#$%)",
     "language": "Language",
-    "languageHint": "Your default categories will be created in this language"
+    "languageHint": "Your default categories will be created in this language",
+    "forgotPassword": "Forgot your password?"
+  },
+  "passwordReset": {
+    "requestTitle": "Reset your password",
+    "requestSubtitle": "Enter your email and we'll send you a reset link",
+    "sendLink": "Send reset link",
+    "sendError": "Could not send the reset email. Please try again later.",
+    "sentTitle": "Check your inbox",
+    "sentBody": "If an account exists for that email, we've sent a password reset link. It is valid for 1 hour.",
+    "resetTitle": "Choose a new password",
+    "resetSubtitle": "Enter and confirm your new password",
+    "reset": "Reset password",
+    "successTitle": "Password updated!",
+    "successBody": "You can now sign in with your new password.",
+    "errorTitle": "Reset failed",
+    "errorBody": "The link is invalid or has expired. Request a new one to continue.",
+    "requestNew": "Request a new link",
+    "backToLogin": "Back to sign in"
   },
   "verifyEmail": {
     "banner": "Please verify your email address — check your inbox for the confirmation link.",

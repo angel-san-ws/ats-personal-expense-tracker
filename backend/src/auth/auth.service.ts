@@ -8,7 +8,12 @@ import { MailService } from '../mail/mail.service';
 import { User } from '../users/user.entity';
 import { UsersService } from '../users/users.service';
 import { PublicUser, toPublicUser } from '../users/user.mapper';
-import { GoogleLoginDto, LoginDto, RegisterDto } from './dto';
+import {
+  ForgotPasswordDto,
+  GoogleLoginDto,
+  LoginDto,
+  RegisterDto,
+} from './dto';
 
 export interface AuthResult {
   accessToken: string;
@@ -66,6 +71,23 @@ export class AuthService {
     if (!valid) throw new UnauthorizedException('Invalid email or password');
 
     return this.buildResult(user.id, user.email, toPublicUser(user));
+  }
+
+  /**
+   * Email a password-reset link. Silently no-ops for unknown emails and for
+   * Google-only accounts (no password) so the endpoint can't be used to probe
+   * which addresses are registered.
+   */
+  async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
+    const user = await this.users.findByEmail(dto.email);
+    if (!user || !user.passwordHash) return;
+    const token = await this.users.issuePasswordResetToken(user.id);
+    await this.mail.sendPasswordResetEmail(
+      user.email,
+      user.name,
+      token,
+      user.language,
+    );
   }
 
   async googleLogin(dto: GoogleLoginDto): Promise<AuthResult> {

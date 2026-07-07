@@ -16,6 +16,7 @@ import { defaultCategoriesFor } from '../common/default-categories';
 import { RateStampingService } from '../rates/rate-stamping.service';
 
 const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
 const sha256 = (value: string) =>
   createHash('sha256').update(value).digest('hex');
@@ -117,6 +118,45 @@ export class UsersService {
     return this.markEmailVerified(user);
   }
 
+  /**
+   * Create a fresh password-reset token for the user and return the raw value
+   * (to be emailed). Only its SHA-256 hash is stored; re-issuing invalidates
+   * any previous link.
+   */
+  async issuePasswordResetToken(userId: string): Promise<string> {
+    const raw = randomBytes(32).toString('hex');
+    await this.users.update(userId, {
+      passwordResetTokenHash: sha256(raw),
+      passwordResetExpiresAt: new Date(
+        Date.now() + PASSWORD_RESET_TOKEN_TTL_MS,
+      ),
+    });
+    return raw;
+  }
+
+  /** Consume a reset token from an emailed link and set the new password. */
+  async resetPasswordByToken(
+    rawToken: string,
+    newPassword: string,
+  ): Promise<User> {
+    const user = await this.users.findOne({
+      where: { passwordResetTokenHash: sha256(rawToken) },
+    });
+    if (
+      !user ||
+      !user.passwordResetExpiresAt ||
+      user.passwordResetExpiresAt.getTime() < Date.now()
+    ) {
+      throw new BadRequestException('Reset link is invalid or has expired');
+    }
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    user.passwordResetTokenHash = null;
+    user.passwordResetExpiresAt = null;
+    // The reset link arrived at the account's address, so ownership is proven.
+    user.emailVerifiedAt = user.emailVerifiedAt ?? new Date();
+    return this.users.save(user);
+  }
+
   /** Stamp the email as verified (also used when Google proves ownership). */
   async markEmailVerified(user: User): Promise<User> {
     user.emailVerifiedAt = user.emailVerifiedAt ?? new Date();
@@ -184,6 +224,9 @@ export class UsersService {
     const ok = await bcrypt.compare(dto.currentPassword, user.passwordHash);
     if (!ok) throw new BadRequestException('Current password is incorrect');
     user.passwordHash = await bcrypt.hash(dto.newPassword, 10);
+    // A pending reset link must not stay valid for the old request.
+    user.passwordResetTokenHash = null;
+    user.passwordResetExpiresAt = null;
     await this.users.save(user);
   }
 }

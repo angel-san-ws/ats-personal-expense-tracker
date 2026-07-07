@@ -31,20 +31,34 @@ export class MailService {
       .replace(/\/+$/, '');
   }
 
-  async sendVerificationEmail(
+  sendVerificationEmail(
     to: string,
     name: string,
     rawToken: string,
     language: AppLanguage,
   ): Promise<boolean> {
+    const link = `${this.appBaseUrl}/verify-email?token=${rawToken}`;
+    return this.send(to, verificationTemplate(name, link, language));
+  }
+
+  sendPasswordResetEmail(
+    to: string,
+    name: string,
+    rawToken: string,
+    language: AppLanguage,
+  ): Promise<boolean> {
+    const link = `${this.appBaseUrl}/reset-password?token=${rawToken}`;
+    return this.send(to, passwordResetTemplate(name, link, language));
+  }
+
+  private async send(
+    to: string,
+    { subject, html }: { subject: string; html: string },
+  ): Promise<boolean> {
     if (!this.resend) {
-      this.logger.warn(
-        `RESEND_API_KEY not set — skipping verification email to ${to}`,
-      );
+      this.logger.warn(`RESEND_API_KEY not set — skipping email to ${to}`);
       return false;
     }
-    const link = `${this.appBaseUrl}/verify-email?token=${rawToken}`;
-    const { subject, html } = verificationTemplate(name, link, language);
     // Redirected mail keeps the intended recipient visible in the subject.
     const recipient = this.redirectTo || to;
     const finalSubject = this.redirectTo ? `[to: ${to}] ${subject}` : subject;
@@ -57,13 +71,13 @@ export class MailService {
       });
       if (error) {
         this.logger.warn(
-          `Resend rejected verification email to ${to}: ${error.message}`,
+          `Resend rejected email "${subject}" to ${to}: ${error.message}`,
         );
         return false;
       }
       return true;
     } catch (err) {
-      this.logger.warn(`Failed to send verification email to ${to}`, err);
+      this.logger.warn(`Failed to send email "${subject}" to ${to}`, err);
       return false;
     }
   }
@@ -93,7 +107,48 @@ function verificationTemplate(
           ignore:
             "If you didn't create this account, you can ignore this message.",
         };
-  const html = `
+  return { subject: t.subject, html: actionEmailHtml(t, link) };
+}
+
+function passwordResetTemplate(
+  name: string,
+  link: string,
+  language: AppLanguage,
+): { subject: string; html: string } {
+  const t =
+    language === 'es'
+      ? {
+          subject: 'Restablece tu contraseña',
+          greeting: `Hola ${name},`,
+          body: 'Recibimos una solicitud para restablecer la contraseña de tu cuenta de ATS - Personal Expense Tracker. Haz clic en el botón para elegir una nueva:',
+          button: 'Restablecer contraseña',
+          expiry: 'El enlace es válido por 1 hora.',
+          ignore:
+            'Si no solicitaste este cambio, ignora este mensaje — tu contraseña seguirá siendo la misma.',
+        }
+      : {
+          subject: 'Reset your password',
+          greeting: `Hi ${name},`,
+          body: 'We received a request to reset the password for your ATS - Personal Expense Tracker account. Click the button below to choose a new one:',
+          button: 'Reset password',
+          expiry: 'The link is valid for 1 hour.',
+          ignore:
+            "If you didn't request this, you can ignore this message — your password will stay the same.",
+        };
+  return { subject: t.subject, html: actionEmailHtml(t, link) };
+}
+
+function actionEmailHtml(
+  t: {
+    greeting: string;
+    body: string;
+    button: string;
+    expiry: string;
+    ignore: string;
+  },
+  link: string,
+): string {
+  return `
     <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #1f2937;">
       <h2 style="margin: 0 0 16px;">${t.greeting}</h2>
       <p style="margin: 0 0 24px; line-height: 1.5;">${t.body}</p>
@@ -103,5 +158,4 @@ function verificationTemplate(
       <p style="margin: 0 0 8px; font-size: 13px; color: #6b7280;">${t.expiry}</p>
       <p style="margin: 0; font-size: 13px; color: #6b7280;">${t.ignore}</p>
     </div>`;
-  return { subject: t.subject, html };
 }
