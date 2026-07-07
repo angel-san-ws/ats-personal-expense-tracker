@@ -89,6 +89,11 @@ export class AuthService {
       );
   }
 
+  /** Drop a stored token the backend rejected, without navigating (app startup). */
+  clearStaleToken(): void {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+
   setUser(user: User): void {
     this._user.set(user);
   }

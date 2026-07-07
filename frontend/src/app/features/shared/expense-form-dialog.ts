@@ -14,6 +14,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { MessageService } from 'primeng/api';
 
@@ -36,6 +37,7 @@ import { CategorySelectComponent } from './category-select';
     SelectModule,
     InputTextModule,
     InputNumberModule,
+    AutoCompleteModule,
     ButtonModule,
     CategorySelectComponent,
   ],
@@ -102,17 +104,50 @@ import { CategorySelectComponent } from './category-select';
           <div class="flex gap-2">
             <div class="flex flex-column gap-1 flex-1">
               <label>{{ t('expenses.card') }}</label>
-              <input pInputText [(ngModel)]="form.tarjeta" class="w-full" />
+              <p-autocomplete
+                [ngModel]="form.tarjeta"
+                (ngModelChange)="form.tarjeta = $event ?? ''"
+                [suggestions]="tarjetaSuggestions()"
+                (completeMethod)="
+                  tarjetaSuggestions.set(filterOptions(cardNameOptions(), $event.query))
+                "
+                [dropdown]="true"
+                [fluid]="true"
+                appendTo="body"
+                scrollHeight="14rem"
+              />
             </div>
             <div class="flex flex-column gap-1 flex-1">
               <label>{{ t('expenses.cardNo') }}</label>
-              <input pInputText [(ngModel)]="form.noTarjeta" class="w-full" />
+              <p-autocomplete
+                [ngModel]="form.noTarjeta"
+                (ngModelChange)="form.noTarjeta = $event ?? ''"
+                [suggestions]="noTarjetaSuggestions()"
+                (completeMethod)="
+                  noTarjetaSuggestions.set(filterOptions(cardNoOptions(), $event.query))
+                "
+                [dropdown]="true"
+                [fluid]="true"
+                appendTo="body"
+                scrollHeight="14rem"
+              />
             </div>
           </div>
 
           <div class="flex flex-column gap-1">
             <label>{{ t('expenses.type') }}</label>
-            <input pInputText [(ngModel)]="form.tipoMovimiento" class="w-full" />
+            <p-autocomplete
+              [ngModel]="form.tipoMovimiento"
+              (ngModelChange)="form.tipoMovimiento = $event ?? ''"
+              [suggestions]="tipoSuggestions()"
+              (completeMethod)="
+                tipoSuggestions.set(filterOptions(tipoOptions(), $event.query))
+              "
+              [dropdown]="true"
+              [fluid]="true"
+              appendTo="body"
+              scrollHeight="14rem"
+            />
           </div>
         </div>
 
@@ -152,6 +187,14 @@ export class ExpenseFormDialogComponent {
   editing = signal<Expense | null>(null);
   currencyOptions = signal<string[]>([]);
 
+  // Suggestion pools for card / card no / type; the fields stay free-text.
+  cardNameOptions = signal<string[]>([]);
+  cardNoOptions = signal<string[]>([]);
+  tipoOptions = signal<string[]>([]);
+  tarjetaSuggestions = signal<string[]>([]);
+  noTarjetaSuggestions = signal<string[]>([]);
+  tipoSuggestions = signal<string[]>([]);
+
   form: {
     fecha: Date | null;
     comercio: string;
@@ -186,8 +229,15 @@ export class ExpenseFormDialogComponent {
         }
       : this.emptyForm();
     this.loadCurrencies();
+    this.loadFieldOptions();
     this.categorySelect?.reload();
     this.visible = true;
+  }
+
+  /** Case-insensitive contains-filter for the autocomplete suggestions. */
+  filterOptions(options: string[], query: string): string[] {
+    const q = query.trim().toLowerCase();
+    return q ? options.filter((o) => o.toLowerCase().includes(q)) : [...options];
   }
 
   isValid(): boolean {
@@ -254,6 +304,18 @@ export class ExpenseFormDialogComponent {
 
   private defaultCurrency(): string {
     return this.auth.user()?.currency || 'GTQ';
+  }
+
+  /** Refresh the suggestion pools; best-effort, the fields stay free-text. */
+  private loadFieldOptions(): void {
+    this.expensesSvc.fieldOptions().subscribe({
+      next: (res) => {
+        this.cardNameOptions.set(res.tarjetas);
+        this.cardNoOptions.set(res.noTarjetas);
+        this.tipoOptions.set(res.tipoMovimientos);
+      },
+      error: () => {},
+    });
   }
 
   private loadCurrencies(): void {

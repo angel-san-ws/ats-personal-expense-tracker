@@ -6,7 +6,11 @@ import {
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import {
+  HttpErrorResponse,
+  provideHttpClient,
+  withInterceptors,
+} from '@angular/common/http';
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeng/themes/aura';
 import { provideTransloco } from '@jsverse/transloco';
@@ -58,7 +62,18 @@ export const appConfig: ApplicationConfig = {
       lang.init();
       theme.init();
       if (auth.token) {
-        return auth.loadMe().pipe(catchError(() => of(null)));
+        return auth.loadMe().pipe(
+          catchError((err: unknown) => {
+            // Expired/invalid token: drop it so guestGuard doesn't bounce
+            // /login back to /dashboard. Network errors (backend still
+            // starting) keep the token; the guards still require a loaded
+            // session, so the user lands on /login either way.
+            if (err instanceof HttpErrorResponse && (err.status === 401 || err.status === 403)) {
+              auth.clearStaleToken();
+            }
+            return of(null);
+          }),
+        );
       }
       return of(null);
     }),
