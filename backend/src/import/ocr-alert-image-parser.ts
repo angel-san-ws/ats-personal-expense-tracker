@@ -1,7 +1,11 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { createWorker, OEM, Worker } from 'tesseract.js';
 import { AlertImageParser } from './alert-image-parser';
-import { ParsedAlert, parseAlertText } from './alert-text-parser';
+import {
+  countAlertCandidates,
+  ParsedAlert,
+  parseAlertText,
+} from './alert-text-parser';
 
 /**
  * OCR implementation of AlertImageParser: tesseract.js reads the screenshot
@@ -35,8 +39,14 @@ export class OcrAlertImageParser implements AlertImageParser, OnModuleDestroy {
     this.logger.log(
       `OCR read ${data.text.length} chars, ${alerts.length} alerts recognized`,
     );
-    // The raw OCR text is the only way to diagnose unrecognized alerts.
-    //this.logger.debug(`OCR text:\n${data.text}`);
+    // The raw OCR text is the only way to diagnose unrecognized alerts, so
+    // dump it whenever the text contains more alerts than we could parse.
+    const candidates = countAlertCandidates(data.text);
+    if (candidates > alerts.length) {
+      this.logger.warn(
+        `${candidates - alerts.length} alert(s) in the screenshot were not recognized. OCR text:\n${data.text}`,
+      );
+    }
     return alerts;
   }
 

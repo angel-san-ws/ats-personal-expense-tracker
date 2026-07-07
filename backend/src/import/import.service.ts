@@ -33,7 +33,11 @@ function signature(r: {
 }): string {
   const doc = (r.noDoc ?? '').trim();
   const amount = Number(r.valor).toFixed(2);
-  const merchant = (r.comercio ?? '').trim().toUpperCase();
+  // Strip OCR chrome glyphs from the merchant's edges so screenshot rows
+  // stored before/after that cleanup existed still match each other.
+  const merchant = (r.comercio ?? '')
+    .replace(/^[\s*•·>»›«‹®|]+|[\s*•·>»›«‹®|]+$/g, '')
+    .toUpperCase();
   const currency = (r.currency ?? '').trim().toUpperCase();
   return `${doc}|${r.fecha}|${amount}|${merchant}|${currency}`;
 }

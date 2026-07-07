@@ -1,6 +1,43 @@
-﻿import { parseAlertText } from './alert-text-parser';
+﻿import { countAlertCandidates, parseAlertText } from './alert-text-parser';
 
 describe('parseAlertText', () => {
+  it('tolerates chrome glyphs (unread dot, chevron) OCR injects between tokens', () => {
+    // Real 06/07/2026 screenshot: the unread dot lands as "*"/"•" and the row
+    // chevron as "›"/"»" inside the alert text; the Q.79.00 alert was dropped.
+    const text = `
+      06/07/2026 19:55
+      BiMovil: Consumo por Q.448.80 en
+      * DOLLARCITY PERIFERICO Cuenta
+      TCADICIONAL 06-Jul 19:55 Autorizacion
+      231819.
+
+      06/07/2026 15:09
+      BiMovil: Consumo por Q.6.00 en
+      PedidosYa*Propina Cuenta TCREDITO8 › 06-Jul
+      15:09 Autorizacion 248950.
+
+      06/07/2026 14:22
+      • BiMovil: Consumo por Q.79.00 en
+      PedidosYa*La Esquina De Cuenta TCREDITO8 »
+      06-Jul 14:22 • Autorizacion 148714.
+    `;
+    const alerts = parseAlertText(text);
+    expect(alerts.map((a) => [a.comercio, a.valor, a.autorizacion])).toEqual([
+      ['DOLLARCITY PERIFERICO', 448.8, '231819'],
+      ['PedidosYa*Propina', 6, '248950'],
+      ['PedidosYa*La Esquina De', 79, '148714'],
+    ]);
+    expect(alerts.every((a) => a.fecha === '2026-07-06')).toBe(true);
+  });
+
+  it('tolerates l → 1/I confusion in the month abbreviation', () => {
+    const text =
+      'BiMovil: Consumo por Q.10.00 en X Cuenta T1 02-Ju1 20:24 Autorizacion 1. ' +
+      'BiMovil: Consumo por Q.11.00 en Y Cuenta T1 03-JuI 09:00 Autorizacion 2.';
+    const alerts = parseAlertText(text, new Date(2026, 6, 6));
+    expect(alerts.map((a) => a.fecha)).toEqual(['2026-07-02', '2026-07-03']);
+  });
+
   it('parses a full notification-list screenshot text (BiMovil)', () => {
     const text = `
       Alerts
@@ -245,6 +282,15 @@ describe('parseAlertText', () => {
   it('returns an empty list for unrelated text', () => {
     expect(parseAlertText('Nothing to see here 02/07/2026')).toEqual([]);
     expect(parseAlertText('')).toEqual([]);
+  });
+
+  it('counts alert candidates so missed alerts can be detected', () => {
+    const text =
+      'BiMovil: Consumo por Q.10.00 en X Cuenta T1 02-Jul 20:24 Autorizacion 1. ' +
+      'BiMovil: Consumo por Q.20.00 garbled beyond recognition';
+    expect(countAlertCandidates(text)).toBe(2);
+    expect(parseAlertText(text, new Date(2026, 6, 6))).toHaveLength(1);
+    expect(countAlertCandidates('nothing here')).toBe(0);
   });
 
   it('skips alerts with an unrecognizable month but keeps the rest', () => {

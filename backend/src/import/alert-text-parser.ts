@@ -42,6 +42,7 @@ const MONTHS: Record<string, number> = {
   may: 5,
   jun: 6,
   jul: 7,
+  jui: 7, // OCR reads "Jul" with l → I confusion
   ago: 8,
   aug: 8,
   sep: 9,
@@ -53,11 +54,25 @@ const MONTHS: Record<string, number> = {
 };
 
 /**
- * Card purchase. `\s+` throughout tolerates OCR line wraps; the merchant is a
- * lazy match ended by the literal "Cuenta" keyword.
+ * Whitespace plus stray glyphs tesseract invents from the notification-list
+ * chrome — the unread dot (read as "*", "·", "•", "®") and the row chevron
+ * ("›", ">", "»") — which can land between the alert's real tokens. Matched
+ * wherever plain whitespace is expected between structural parts.
  */
-const CONSUMO_RE =
-  /Consumo\s+por\s*(Q|US\$?|USD|\$|€)\s*[.,]?\s*([\d][\d.,]*)\s+en\s+([\s\S]+?)\s+Cuenta\s+(\S+)\s+(\d{1,2})\s*[-–.\s]\s*([A-Za-zÁÉÍÓÚáéíóú]{3,4})\.?\s*(?:\d{1,2}:\d{2})?\s*Autorizaci[oó]n\s*[.:]?\s*(\d+)/gi;
+const GAP = String.raw`[\s*•·>»›«‹®|]`;
+const GAP_TRIM_RE = new RegExp(String.raw`^${GAP}+|${GAP}+$`, 'g');
+
+/** Day + month tail shared by both alert templates, ending at the auth no. */
+const DATE_AUTH = String.raw`(\d{1,2})\s*[-–.\s]\s*([A-Za-zÁÉÍÓÚáéíóú1|]{3,4})\.?\s*(?:\d{1,2}:\d{2})?${GAP}*Autorizaci[oóeé]n\s*[.:]?\s*(\d+)`;
+
+/**
+ * Card purchase. `\s+`/`GAP+` throughout tolerates OCR line wraps and chrome
+ * glyphs; the merchant is a lazy match ended by the literal "Cuenta" keyword.
+ */
+const CONSUMO_RE = new RegExp(
+  String.raw`Consumo\s+por\s*(Q|US\$?|USD|\$|€)\s*[.,]?\s*([\d][\d.,]*)${GAP}+en\s+([\s\S]+?)\s+Cuenta\s+(\S+)${GAP}+${DATE_AUTH}`,
+  'gi',
+);
 
 /**
  * Bank-account movement — Debito (transfer/withdrawal → expense) or Credito
@@ -67,8 +82,10 @@ const CONSUMO_RE =
  * "en la" connector is matched loosely ([\s\S]{0,14}?) because OCR often
  * garbles it (e.g. "en Ia", "enla").
  */
-const MOVIMIENTO_RE =
-  /(Debito|Credito)\s+por\s*(Q|US\$?|USD|\$|€)\s*[.,]?\s*([\d][\d.,]*)\s+Cuenta\s+(\S+)[\s\S]{0,14}?\bAgencia\s+([\s\S]+?)\s+(\d{1,2})\s*[-–.\s]\s*([A-Za-zÁÉÍÓÚáéíóú]{3,4})\.?\s*(?:\d{1,2}:\d{2})?\s*Autorizaci[oó]n\s*[.:]?\s*(\d+)/gi;
+const MOVIMIENTO_RE = new RegExp(
+  String.raw`(Debito|Credito)\s+por\s*(Q|US\$?|USD|\$|€)\s*[.,]?\s*([\d][\d.,]*)${GAP}+Cuenta\s+(\S+)[\s\S]{0,14}?\bAgencia\s+([\s\S]+?)${GAP}+${DATE_AUTH}`,
+  'gi',
+);
 
 /** Notification delivery timestamp header, e.g. "02/07/2026". */
 const HEADER_DATE_RE = /(\d{1,2})\/(\d{1,2})\/(\d{4})/g;
@@ -179,9 +196,15 @@ function buildAlert(
   referenceDate: Date,
 ): ParsedAlert | null {
   const valor = parseAlertAmount(parts.amountRaw);
-  const comercio = parts.merchantRaw.replace(/\s+/g, ' ').trim();
+  // Chrome glyphs (unread dot, chevron) OCR'd next to the merchant are noise:
+  // they pollute the concept name and destabilize the dedup signature.
+  const comercio = parts.merchantRaw
+    .replace(GAP_TRIM_RE, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   const day = parseInt(parts.dayRaw, 10);
-  const month = MONTHS[parts.monthRaw.toLowerCase().slice(0, 3)];
+  const month =
+    MONTHS[parts.monthRaw.toLowerCase().replace(/[1|]/g, 'l').slice(0, 3)];
   if (valor === null || !comercio || !month || day < 1 || day > 31) {
     return null;
   }
@@ -254,4 +277,15 @@ export function parseAlertText(
 
   // Restore on-screen order (each pattern scans the text separately).
   return found.sort((a, b) => a.index - b.index).map((f) => f.alert);
+}
+
+/**
+ * Rough count of alert bodies present in the text, recognized or not.
+ * Comparing it against parseAlertText's output detects alerts the regexes
+ * missed (OCR garbled a structural token).
+ */
+export function countAlertCandidates(text: string): number {
+  const bodies = text.match(/(?:Consumo|Debito|Credito)\s+por/gi)?.length ?? 0;
+  const headers = text.match(/BiM[oó]vil/gi)?.length ?? 0;
+  return Math.max(bodies, headers);
 }
