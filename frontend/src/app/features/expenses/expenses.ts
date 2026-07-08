@@ -9,6 +9,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { AutoCompleteModule } from 'primeng/autocomplete';
+import { SelectModule } from 'primeng/select';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { FilterBarComponent } from '../shared/filter-bar';
@@ -16,6 +17,7 @@ import { ExpenseFormDialogComponent } from '../shared/expense-form-dialog';
 import { CategorySelectComponent } from '../shared/category-select';
 import { AuthService } from '../../core/auth/auth.service';
 import { AtsCurrencyPipe } from '../../core/currency.pipe';
+import { AccountsService } from '../../core/services/accounts.service';
 import { ConceptsService } from '../../core/services/concepts.service';
 import { ExpensesService } from '../../core/services/expenses.service';
 import { ExportColumn, ExportService } from '../../core/services/export.service';
@@ -34,6 +36,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
     ButtonModule,
     DialogModule,
     AutoCompleteModule,
+    SelectModule,
     FilterBarComponent,
     ExpenseFormDialogComponent,
     CategorySelectComponent,
@@ -125,9 +128,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
               <th pSortableColumn="fecha" style="width: 8rem">
                 {{ t('expenses.date') }} <p-sortIcon field="fecha" />
               </th>
-              <th pSortableColumn="tarjeta">{{ t('expenses.card') }} <p-sortIcon field="tarjeta" /></th>
-              <th>{{ t('expenses.cardNo') }}</th>
-              <th>{{ t('expenses.type') }}</th>
+              <th pSortableColumn="account">{{ t('expenses.account') }} <p-sortIcon field="account" /></th>
               <th pSortableColumn="comercio">
                 {{ t('expenses.merchant') }} <p-sortIcon field="comercio" />
               </th>
@@ -146,9 +147,22 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
             <tr [style.opacity]="e.excluded ? 0.5 : 1">
               <td><p-tableCheckbox [value]="e" /></td>
               <td>{{ e.fecha }}</td>
-              <td>{{ e.tarjeta || '—' }}</td>
-              <td>{{ e.noTarjeta || '—' }}</td>
-              <td>{{ e.tipoMovimiento || '—' }}</td>
+              <td>
+                @if (e.accountName) {
+                  <span class="flex align-items-center gap-2">
+                    @if (e.accountColor) {
+                      <span
+                        class="border-circle inline-block"
+                        [style.background]="e.accountColor"
+                        style="width: 0.6rem; height: 0.6rem"
+                      ></span>
+                    }
+                    {{ e.accountName }}
+                  </span>
+                } @else {
+                  <span class="text-color-secondary">—</span>
+                }
+              </td>
               <td class="font-medium">
                 {{ e.comercio }}
                 @if (e.recurringExpenseId) {
@@ -201,7 +215,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
 
           <ng-template #emptymessage>
             <tr>
-              <td colspan="10" class="text-center p-5 text-color-secondary">
+              <td colspan="8" class="text-center p-5 text-color-secondary">
                 {{ t('expenses.empty') }}
               </td>
             </tr>
@@ -210,7 +224,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
           <ng-template #footer>
             @if (selected().length > 0) {
               <tr>
-                <td colspan="7" class="text-right font-bold">
+                <td colspan="5" class="text-right font-bold">
                   {{ t('expenses.selectedTotal', { count: selected().length }) }}
                 </td>
                 <td class="text-right font-bold">
@@ -223,7 +237,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
               </tr>
             }
             <tr>
-              <td colspan="7" class="text-right font-bold">
+              <td colspan="5" class="text-right font-bold">
                 {{ t('expenses.total') }} ({{ total() }})
               </td>
               <td class="text-right font-bold">
@@ -251,54 +265,18 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
         <div class="flex flex-column gap-3">
           <span>{{ t('expenses.batchEditNote', { count: selected().length }) }}</span>
           <div class="flex flex-column gap-1">
-            <label for="batch-edit-card" class="text-sm">{{ t('expenses.card') }}</label>
-            <p-autocomplete
-              inputId="batch-edit-card"
-              [ngModel]="batchEditTarjeta()"
-              (ngModelChange)="batchEditTarjeta.set($event ?? '')"
-              [suggestions]="tarjetaSuggestions()"
-              (completeMethod)="
-                tarjetaSuggestions.set(filterOptions(cardNameOptions(), $event.query))
-              "
-              [dropdown]="true"
-              [fluid]="true"
-              appendTo="body"
-              scrollHeight="14rem"
+            <label for="batch-edit-account" class="text-sm">{{ t('expenses.account') }}</label>
+            <p-select
+              inputId="batch-edit-account"
+              [ngModel]="batchEditAccountId()"
+              (ngModelChange)="batchEditAccountId.set($event ?? null)"
+              [options]="accountOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [showClear]="true"
               [placeholder]="t('expenses.batchEditKeep')"
-            />
-          </div>
-          <div class="flex flex-column gap-1">
-            <label for="batch-edit-card-no" class="text-sm">{{ t('expenses.cardNo') }}</label>
-            <p-autocomplete
-              inputId="batch-edit-card-no"
-              [ngModel]="batchEditNoTarjeta()"
-              (ngModelChange)="batchEditNoTarjeta.set($event ?? '')"
-              [suggestions]="noTarjetaSuggestions()"
-              (completeMethod)="
-                noTarjetaSuggestions.set(filterOptions(cardNoOptions(), $event.query))
-              "
-              [dropdown]="true"
-              [fluid]="true"
               appendTo="body"
-              scrollHeight="14rem"
-              [placeholder]="t('expenses.batchEditKeep')"
-            />
-          </div>
-          <div class="flex flex-column gap-1">
-            <label for="batch-edit-type" class="text-sm">{{ t('expenses.type') }}</label>
-            <p-autocomplete
-              inputId="batch-edit-type"
-              [ngModel]="batchEditTipoMovimiento()"
-              (ngModelChange)="batchEditTipoMovimiento.set($event ?? '')"
-              [suggestions]="tipoSuggestions()"
-              (completeMethod)="
-                tipoSuggestions.set(filterOptions(tipoOptions(), $event.query))
-              "
-              [dropdown]="true"
-              [fluid]="true"
-              appendTo="body"
-              scrollHeight="14rem"
-              [placeholder]="t('expenses.batchEditKeep')"
+              styleClass="w-full"
             />
           </div>
           <div class="flex flex-column gap-1">
@@ -375,6 +353,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
 })
 export class ExpensesComponent {
   private expensesSvc = inject(ExpensesService);
+  private accountsSvc = inject(AccountsService);
   private conceptsSvc = inject(ConceptsService);
   private exportSvc = inject(ExportService);
   private transloco = inject(TranslocoService);
@@ -397,31 +376,18 @@ export class ExpensesComponent {
   categorizing = signal(false);
 
   batchEditVisible = signal(false);
-  batchEditTarjeta = signal('');
-  batchEditNoTarjeta = signal('');
-  batchEditTipoMovimiento = signal('');
+  batchEditAccountId = signal<string | null>(null);
   batchEditComercio = signal('');
   batchEditing = signal(false);
 
   /** Existing values offered as suggestions in the batch-edit dropdowns. */
-  cardNameOptions = signal<string[]>([]);
-  cardNoOptions = signal<string[]>([]);
-  tipoOptions = signal<string[]>([]);
+  accountOptions = signal<{ label: string; value: string }[]>([]);
   merchantOptions = signal<string[]>([]);
-  tarjetaSuggestions = signal<string[]>([]);
-  noTarjetaSuggestions = signal<string[]>([]);
-  tipoSuggestions = signal<string[]>([]);
   comercioSuggestions = signal<string[]>([]);
 
   /** Blank fields mean "keep"; the apply button needs at least one filled. */
   hasBatchEditChanges = computed(
-    () =>
-      !!(
-        this.batchEditTarjeta().trim() ||
-        this.batchEditNoTarjeta().trim() ||
-        this.batchEditTipoMovimiento().trim() ||
-        this.batchEditComercio().trim()
-      ),
+    () => !!(this.batchEditAccountId() || this.batchEditComercio().trim()),
   );
 
   /** Distinct merchants (concepts) among the selected rows; payments carry none. */
@@ -490,9 +456,7 @@ export class ExpensesComponent {
       });
       const columns: ExportColumn[] = [
         { header: t('expenses.date'), value: (e) => e.fecha },
-        { header: t('expenses.card'), value: (e) => e.tarjeta ?? '' },
-        { header: t('expenses.cardNo'), value: (e) => e.noTarjeta ?? '' },
-        { header: t('expenses.type'), value: (e) => e.tipoMovimiento ?? '' },
+        { header: t('expenses.account'), value: (e) => e.accountName ?? '' },
         { header: t('expenses.merchant'), value: (e) => e.comercio },
         {
           header: t('expenses.category'),
@@ -516,18 +480,17 @@ export class ExpensesComponent {
 
   openBatchEdit(): void {
     if (this.selected().length === 0) return;
-    this.batchEditTarjeta.set('');
-    this.batchEditNoTarjeta.set('');
-    this.batchEditTipoMovimiento.set('');
+    this.batchEditAccountId.set(null);
     this.batchEditComercio.set('');
     this.batchEditVisible.set(true);
-    // Refresh the suggestion pools; best-effort, the fields stay free-text.
-    this.expensesSvc.fieldOptions().subscribe({
-      next: (res) => {
-        this.cardNameOptions.set(res.tarjetas);
-        this.cardNoOptions.set(res.noTarjetas);
-        this.tipoOptions.set(res.tipoMovimientos);
-      },
+    // Refresh the option pools; best-effort.
+    this.accountsSvc.list().subscribe({
+      next: (accounts) =>
+        this.accountOptions.set(
+          accounts
+            .filter((a) => !a.archived)
+            .map((a) => ({ label: a.name, value: a.id })),
+        ),
       error: () => {},
     });
     this.conceptsSvc.list().subscribe({
@@ -547,15 +510,11 @@ export class ExpensesComponent {
     const ids = this.selected().map((e) => e.id);
     if (ids.length === 0) return;
     const changes: {
-      tarjeta?: string;
-      noTarjeta?: string;
-      tipoMovimiento?: string;
+      accountId?: string;
       comercio?: string;
     } = {};
-    if (this.batchEditTarjeta().trim()) changes.tarjeta = this.batchEditTarjeta().trim();
-    if (this.batchEditNoTarjeta().trim()) changes.noTarjeta = this.batchEditNoTarjeta().trim();
-    if (this.batchEditTipoMovimiento().trim()) {
-      changes.tipoMovimiento = this.batchEditTipoMovimiento().trim();
+    if (this.batchEditAccountId()) {
+      changes.accountId = this.batchEditAccountId() as string;
     }
     if (this.batchEditComercio().trim()) changes.comercio = this.batchEditComercio().trim();
     this.batchEditing.set(true);

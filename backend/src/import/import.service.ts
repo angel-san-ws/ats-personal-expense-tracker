@@ -10,6 +10,8 @@ import { DataSource } from 'typeorm';
 
 import { ImportBatch } from './import-batch.entity';
 import { Expense } from '../expenses/expense.entity';
+import { AccountsService } from '../accounts/accounts.service';
+import { accountMatchKey } from '../accounts/account.entity';
 import { ConceptsService } from '../concepts/concepts.service';
 import { UsersService } from '../users/users.service';
 import { RatesService } from '../rates/rates.service';
@@ -70,6 +72,7 @@ export class ImportService {
 
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
+    private readonly accounts: AccountsService,
     private readonly concepts: ConceptsService,
     private readonly users: UsersService,
     private readonly rates: RatesService,
@@ -328,6 +331,13 @@ export class ImportService {
         freshRows.filter((r) => r.kind === 'expense').map((r) => r.comercio),
       );
 
+      // Attach each row to its account (created on first sight of a card).
+      const accountIdByKey = await this.accounts.getOrCreateByKeys(
+        manager,
+        userId,
+        freshRows,
+      );
+
       const autoCategorized = suggestCategories
         ? (
             await this.concepts.autoCategorize(userId, {
@@ -341,6 +351,9 @@ export class ImportService {
         manager.create(Expense, {
           userId,
           fecha: r.fecha,
+          accountId:
+            accountIdByKey.get(accountMatchKey(r.noTarjeta, r.tarjeta) ?? '') ??
+            null,
           tarjeta: r.tarjeta,
           noTarjeta: r.noTarjeta,
           nombre: r.nombre,

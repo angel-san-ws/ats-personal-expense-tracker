@@ -7,6 +7,7 @@ import { ImportService } from './import.service';
 import { ImportController } from './import.controller';
 import { ALERT_IMAGE_PARSER, AlertImageParser } from './alert-image-parser';
 import { OcrAlertImageParser } from './ocr-alert-image-parser';
+import { AccountsModule } from '../accounts/accounts.module';
 import { ConceptsModule } from '../concepts/concepts.module';
 import { UsersModule } from '../users/users.module';
 import { RatesModule } from '../rates/rates.module';
@@ -14,6 +15,7 @@ import { RatesModule } from '../rates/rates.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([ImportBatch, Expense]),
+    AccountsModule,
     ConceptsModule,
     UsersModule,
     RatesModule,

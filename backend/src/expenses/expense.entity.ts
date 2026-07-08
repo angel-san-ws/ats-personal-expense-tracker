@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from '../users/user.entity';
+import { Account } from '../accounts/account.entity';
 import { Concept } from '../concepts/concept.entity';
 import { ImportBatch } from '../import/import-batch.entity';
 import { RecurringExpense } from '../recurring/recurring-expense.entity';
@@ -18,6 +19,7 @@ export type ExpenseKind = 'expense' | 'payment';
 @Entity('expenses')
 @Index(['user', 'fecha'])
 @Index(['user', 'tarjeta'])
+@Index(['user', 'account'])
 @Index(['user', 'kind'])
 export class Expense {
   @PrimaryGeneratedColumn('uuid')
@@ -33,6 +35,19 @@ export class Expense {
   /** Transaction date (FECHA) */
   @Column({ type: 'date' })
   fecha: string;
+
+  /**
+   * The payment source this row belongs to. Resolved at import/creation from
+   * the raw card columns below (see accountMatchKey) and lazily backfilled
+   * for rows that predate accounts. The raw columns stay as import
+   * provenance; filtering/grouping should use the account.
+   */
+  @ManyToOne(() => Account, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'account_id' })
+  account: Account | null;
+
+  @Column({ name: 'account_id', type: 'uuid', nullable: true })
+  accountId: string | null;
 
   /** Card type / holder role (TARJETA), e.g. TITULAR */
   @Column({ type: 'varchar', nullable: true })

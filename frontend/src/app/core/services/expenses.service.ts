@@ -36,10 +36,6 @@ export class ExpensesService {
     });
   }
 
-  cards(): Observable<string[]> {
-    return this.http.get<string[]>(`${API_BASE}/expenses/cards`);
-  }
-
   /** Distinct card names / card numbers / movement types, for suggestion dropdowns. */
   fieldOptions(): Observable<{
     tarjetas: string[];
@@ -101,6 +97,7 @@ export class ExpensesService {
   batchUpdate(
     ids: string[],
     changes: {
+      accountId?: string | null;
       tarjeta?: string;
       noTarjeta?: string;
       tipoMovimiento?: string;

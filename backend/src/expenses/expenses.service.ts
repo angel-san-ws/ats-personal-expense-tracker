@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, SelectQueryBuilder } from 'typeorm';
 import { Expense, ExpenseKind } from './expense.entity';
+import { AccountsService } from '../accounts/accounts.service';
 import { ConceptsService } from '../concepts/concepts.service';
 import { UsersService } from '../users/users.service';
 import { RatesService } from '../rates/rates.service';
@@ -32,6 +33,9 @@ const CONVERTED =
 export interface ExpenseRow {
   id: string;
   fecha: string;
+  accountId: string | null;
+  accountName: string | null;
+  accountColor: string | null;
   tarjeta: string | null;
   noTarjeta: string | null;
   nombre: string | null;
@@ -81,7 +85,13 @@ export interface DashboardSummary {
     total: number;
     count: number;
   }[];
-  byCard: { card: string; total: number; count: number }[];
+  byAccount: {
+    accountId: string | null;
+    name: string;
+    color: string | null;
+    total: number;
+    count: number;
+  }[];
   byMonth: { month: string; total: number; count: number }[];
   /** Per-day totals within the range (day is YYYY-MM-DD). */
   byDay: { day: string; total: number; count: number }[];
@@ -99,6 +109,7 @@ export class ExpensesService {
   constructor(
     @InjectRepository(Expense)
     private readonly expenses: Repository<Expense>,
+    private readonly accounts: AccountsService,
     private readonly concepts: ConceptsService,
     private readonly users: UsersService,
     private readonly rates: RatesService,
@@ -137,6 +148,9 @@ export class ExpensesService {
     }
     const currency = dto.currency?.trim().toUpperCase() || 'GTQ';
     const base = await this.baseCurrency(userId);
+    if (dto.accountId) {
+      await this.accounts.findOwned(userId, dto.accountId);
+    }
     const expense = this.expenses.create({
       userId,
       fecha: dto.fecha,
@@ -150,6 +164,7 @@ export class ExpensesService {
         currency === base
           ? 1
           : await this.rates.getRate(dto.fecha, currency, base),
+      accountId: dto.accountId ?? null,
       tarjeta: dto.tarjeta?.trim() || null,
       noTarjeta: dto.noTarjeta?.trim() || null,
       tipoMovimiento: dto.tipoMovimiento?.trim() || null,
@@ -170,6 +185,12 @@ export class ExpensesService {
     if (dto.valor !== undefined) expense.valor = dto.valor;
     if (dto.currency !== undefined) {
       expense.currency = dto.currency.trim().toUpperCase() || expense.currency;
+    }
+    if (dto.accountId !== undefined) {
+      if (dto.accountId) {
+        await this.accounts.findOwned(userId, dto.accountId);
+      }
+      expense.accountId = dto.accountId || null;
     }
     if (dto.tarjeta !== undefined) expense.tarjeta = dto.tarjeta.trim() || null;
     if (dto.noTarjeta !== undefined) {
@@ -254,6 +275,12 @@ export class ExpensesService {
     dto: BatchUpdateExpensesDto,
   ): Promise<{ updated: number }> {
     const patch: Partial<Expense> = {};
+    if (dto.accountId !== undefined) {
+      if (dto.accountId) {
+        await this.accounts.findOwned(userId, dto.accountId);
+      }
+      patch.accountId = dto.accountId || null;
+    }
     if (dto.tarjeta !== undefined) patch.tarjeta = dto.tarjeta.trim() || null;
     if (dto.noTarjeta !== undefined) {
       patch.noTarjeta = dto.noTarjeta.trim() || null;
@@ -304,6 +331,7 @@ export class ExpensesService {
       .createQueryBuilder('e')
       .leftJoin('e.concept', 'concept')
       .leftJoin('concept.category', 'category')
+      .leftJoin('e.account', 'account')
       .where('e.user_id = :userId', { userId });
 
     // Default to spending transactions only; 'payment' or 'all' opt in.
@@ -321,6 +349,11 @@ export class ExpensesService {
       qb.andWhere('e.fecha >= :dateFrom', { dateFrom: dto.dateFrom });
     if (dto.dateTo) qb.andWhere('e.fecha <= :dateTo', { dateTo: dto.dateTo });
 
+    if (dto.accountId) {
+      qb.andWhere('e.account_id = :accountId', { accountId: dto.accountId });
+    }
+
+    // Legacy raw-column filter, kept so old links/saved filters still work.
     if (dto.card) {
       qb.andWhere('(e.tarjeta = :card OR e.no_tarjeta = :card)', {
         card: dto.card,
@@ -353,6 +386,8 @@ export class ExpensesService {
   }
 
   async findAll(userId: string, dto: QueryExpensesDto): Promise<PagedExpenses> {
+    // Adopt any pre-account rows so every listed row carries its account.
+    await this.accounts.ensureBackfilled(userId);
     const page = dto.page ?? 0;
     const size = dto.size ?? 25;
     const sortField = dto.sortField ?? 'fecha';
@@ -364,6 +399,7 @@ export class ExpensesService {
       valor: 'e.valor',
       comercio: 'e.comercio',
       tarjeta: 'e.tarjeta',
+      account: 'account.name',
     };
     const sortColumn = sortColumnMap[sortField] ?? 'e.fecha';
 
@@ -371,6 +407,9 @@ export class ExpensesService {
       .select([
         'e.id AS id',
         'e.fecha AS fecha',
+        'e.account_id AS "accountId"',
+        'account.name AS "accountName"',
+        'account.color AS "accountColor"',
         'e.tarjeta AS tarjeta',
         'e.no_tarjeta AS "noTarjeta"',
         'e.nombre AS nombre',
@@ -405,6 +444,9 @@ export class ExpensesService {
       id: r.id,
       fecha:
         r.fecha instanceof Date ? r.fecha.toISOString().slice(0, 10) : r.fecha,
+      accountId: r.accountId ?? null,
+      accountName: r.accountName ?? null,
+      accountColor: r.accountColor ?? null,
       tarjeta: r.tarjeta,
       noTarjeta: r.noTarjeta,
       nombre: r.nombre,
@@ -450,6 +492,7 @@ export class ExpensesService {
     userId: string,
     dto: QueryExpensesDto,
   ): Promise<DashboardSummary> {
+    await this.accounts.ensureBackfilled(userId);
     const base = await this.baseCurrency(userId);
 
     // Totals, converted to the base currency
@@ -504,18 +547,24 @@ export class ExpensesService {
       count: parseInt(r.count, 10) || 0,
     }));
 
-    // By card
-    const byCardRaw = await this.baseQuery(userId, dto, true)
-      .select("COALESCE(e.no_tarjeta, e.tarjeta, 'N/A')", 'card')
+    // By account (payment source)
+    const byAccountRaw = await this.baseQuery(userId, dto, true)
+      .select('account.id', 'accountId')
+      .addSelect('account.name', 'name')
+      .addSelect('account.color', 'color')
       .addSelect(`COALESCE(SUM(${CONVERTED}), 0)`, 'total')
       .addSelect('COUNT(e.id)', 'count')
       .setParameter('base', base)
-      .groupBy("COALESCE(e.no_tarjeta, e.tarjeta, 'N/A')")
+      .groupBy('account.id')
+      .addGroupBy('account.name')
+      .addGroupBy('account.color')
       .orderBy('total', 'DESC')
       .getRawMany();
 
-    const byCard = byCardRaw.map((r) => ({
-      card: r.card,
+    const byAccount = byAccountRaw.map((r) => ({
+      accountId: r.accountId ?? null,
+      name: r.name ?? 'N/A',
+      color: r.color ?? null,
       total: parseFloat(r.total) || 0,
       count: parseInt(r.count, 10) || 0,
     }));
@@ -614,7 +663,7 @@ export class ExpensesService {
       unconvertedCount,
       byCurrency,
       byCategory,
-      byCard,
+      byAccount,
       byMonth,
       byDay,
       previousPeriods,
@@ -646,7 +695,6 @@ export class ExpensesService {
     return rows.map((r) => r.currency).filter(Boolean);
   }
 
-  /** Distinct card values for filter dropdowns. */
   /** Distinct card names, card numbers and movement types, for suggestion dropdowns. */
   async fieldOptions(userId: string): Promise<{
     tarjetas: string[];
@@ -671,17 +719,5 @@ export class ExpensesService {
       noTarjetas: await distinct('no_tarjeta'),
       tipoMovimientos: await distinct('tipo_movimiento'),
     };
-  }
-
-  async distinctCards(userId: string): Promise<string[]> {
-    const rows = await this.expenses
-      .createQueryBuilder('e')
-      .select('COALESCE(e.no_tarjeta, e.tarjeta)', 'card')
-      .where('e.user_id = :userId', { userId })
-      .andWhere('COALESCE(e.no_tarjeta, e.tarjeta) IS NOT NULL')
-      .groupBy('COALESCE(e.no_tarjeta, e.tarjeta)')
-      .orderBy('card', 'ASC')
-      .getRawMany();
-    return rows.map((r) => r.card).filter(Boolean);
   }
 }

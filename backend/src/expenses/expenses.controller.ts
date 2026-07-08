@@ -38,11 +38,6 @@ export class ExpensesController {
     return this.expenses.summary(user.userId, query);
   }
 
-  @Get('cards')
-  cards(@CurrentUser() user: AuthUser) {
-    return this.expenses.distinctCards(user.userId);
-  }
-
   @Get('field-options')
   fieldOptions(@CurrentUser() user: AuthUser) {
     return this.expenses.fieldOptions(user.userId);

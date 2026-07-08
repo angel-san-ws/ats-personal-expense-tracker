@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { Account } from './accounts/account.entity';
 import { User } from './users/user.entity';
 import { Category } from './categories/category.entity';
 import { Concept } from './concepts/concept.entity';
@@ -11,6 +12,7 @@ import { ImportBatch } from './import/import-batch.entity';
 import { RecurringExpense } from './recurring/recurring-expense.entity';
 import { ExchangeRate } from './rates/exchange-rate.entity';
 
+import { AccountsModule } from './accounts/accounts.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CategoriesModule } from './categories/categories.module';
@@ -42,6 +44,7 @@ import { RatesModule } from './rates/rates.module';
               database: config.get<string>('DB_NAME', 'ats_expenses'),
             }),
         entities: [
+          Account,
           User,
           Category,
           Concept,
@@ -57,6 +60,7 @@ import { RatesModule } from './rates/rates.module';
           config.get('DB_LOGGING') === 'true' ? ['query', 'error'] : ['error'],
       }),
     }),
+    AccountsModule,
     AuthModule,
     UsersModule,
     CategoriesModule,

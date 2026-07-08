@@ -45,10 +45,10 @@ export class CreateRecurringExpenseDto {
   @Matches(/^(\d{4}-\d{2}-\d{2})?$/)
   endDate?: string;
 
+  /** Payment source copied onto generated expenses. */
   @IsOptional()
-  @IsString()
-  @MaxLength(80)
-  tarjeta?: string;
+  @IsUUID()
+  accountId?: string;
 
   @IsOptional()
   @IsBoolean()
@@ -93,10 +93,10 @@ export class UpdateRecurringExpenseDto {
   @Matches(/^(\d{4}-\d{2}-\d{2})?$/)
   endDate?: string;
 
+  /** Payment source copied onto generated expenses; null clears it. */
   @IsOptional()
-  @IsString()
-  @MaxLength(80)
-  tarjeta?: string;
+  @IsUUID()
+  accountId?: string | null;
 
   @IsOptional()
   @IsBoolean()

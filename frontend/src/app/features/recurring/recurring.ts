@@ -14,6 +14,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { RecurringExpensesService } from '../../core/services/recurring-expenses.service';
+import { AccountsService } from '../../core/services/accounts.service';
 import { ExpensesService } from '../../core/services/expenses.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { AtsCurrencyPipe } from '../../core/currency.pipe';
@@ -192,8 +193,16 @@ import {
           <small class="text-color-secondary">{{ t('recurring.startDateHint') }}</small>
 
           <div class="flex flex-column gap-1">
-            <label>{{ t('recurring.card') }}</label>
-            <input pInputText [(ngModel)]="form.tarjeta" class="w-full" />
+            <label>{{ t('recurring.account') }}</label>
+            <p-select
+              [(ngModel)]="form.accountId"
+              [options]="accountOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [showClear]="true"
+              appendTo="body"
+              styleClass="w-full"
+            />
           </div>
         </div>
 
@@ -213,6 +222,7 @@ import {
 })
 export class RecurringComponent implements OnInit {
   private recurringSvc = inject(RecurringExpensesService);
+  private accountsSvc = inject(AccountsService);
   private expensesSvc = inject(ExpensesService);
   private auth = inject(AuthService);
   private confirm = inject(ConfirmationService);
@@ -227,6 +237,7 @@ export class RecurringComponent implements OnInit {
   saving = signal(false);
   editing = signal<RecurringExpense | null>(null);
   currencyOptions = signal<string[]>([]);
+  accountOptions = signal<{ label: string; value: string }[]>([]);
 
   form: {
     comercio: string;
@@ -235,13 +246,14 @@ export class RecurringComponent implements OnInit {
     frequency: RecurrenceFrequency;
     startDate: Date | null;
     endDate: Date | null;
-    tarjeta: string;
+    accountId: string | null;
     categoryId: string | null;
   } = this.emptyForm();
 
   ngOnInit(): void {
     this.load();
     this.loadCurrencies();
+    this.loadAccounts();
   }
 
   frequencyOptions(): { label: string; value: RecurrenceFrequency }[] {
@@ -271,7 +283,7 @@ export class RecurringComponent implements OnInit {
       frequency: r.frequency,
       startDate: this.parseIso(r.startDate),
       endDate: r.endDate ? this.parseIso(r.endDate) : null,
-      tarjeta: r.tarjeta ?? '',
+      accountId: r.accountId,
       categoryId: r.categoryId,
     };
     this.categorySelect?.reload();
@@ -297,7 +309,8 @@ export class RecurringComponent implements OnInit {
       frequency: this.form.frequency,
       startDate: this.toIso(this.form.startDate as Date),
       endDate: this.form.endDate ? this.toIso(this.form.endDate) : '',
-      tarjeta: this.form.tarjeta.trim(),
+      // Null clears the account on edit.
+      accountId: this.form.accountId,
       categoryId: this.form.categoryId || undefined,
     };
     const current = this.editing();
@@ -390,13 +403,25 @@ export class RecurringComponent implements OnInit {
       frequency: 'monthly' as RecurrenceFrequency,
       startDate: new Date(),
       endDate: null,
-      tarjeta: '',
+      accountId: null,
       categoryId: null,
     };
   }
 
   private defaultCurrency(): string {
     return this.auth.user()?.currency || 'GTQ';
+  }
+
+  private loadAccounts(): void {
+    this.accountsSvc.list().subscribe({
+      next: (accounts) =>
+        this.accountOptions.set(
+          accounts
+            .filter((a) => !a.archived)
+            .map((a) => ({ label: a.name, value: a.id })),
+        ),
+      error: () => {},
+    });
   }
 
   private loadCurrencies(): void {

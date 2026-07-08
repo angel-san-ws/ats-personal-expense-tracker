@@ -8,6 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { BadgeModule } from 'primeng/badge';
 
+import { AccountsService } from '../../core/services/accounts.service';
 import { ExpensesService } from '../../core/services/expenses.service';
 import { CategoriesService } from '../../core/services/categories.service';
 import { ConceptsService } from '../../core/services/concepts.service';
@@ -97,14 +98,14 @@ interface Option {
           </div>
 
           <div class="flex flex-column gap-1">
-            <label class="text-sm">{{ t('filters.card') }}</label>
+            <label class="text-sm">{{ t('filters.account') }}</label>
             <p-select
-              [(ngModel)]="card"
-              [options]="cardOptions()"
+              [(ngModel)]="account"
+              [options]="accountOptions()"
               optionLabel="label"
               optionValue="value"
               [showClear]="true"
-              [placeholder]="t('filters.allCards')"
+              [placeholder]="t('filters.allAccounts')"
               styleClass="w-11rem"
               appendTo="body"
             />
@@ -193,6 +194,7 @@ interface Option {
   `,
 })
 export class FilterBarComponent implements OnInit {
+  private accountsSvc = inject(AccountsService);
   private expensesSvc = inject(ExpensesService);
   private categoriesSvc = inject(CategoriesService);
   private conceptsSvc = inject(ConceptsService);
@@ -222,7 +224,7 @@ export class FilterBarComponent implements OnInit {
   period = 'custom';
   dateFrom: Date | null = null;
   dateTo: Date | null = null;
-  card: string | null = null;
+  account: string | null = null; // accountId
   currency: string | null = null;
   category: string | null = null; // categoryId or 'none'
   concept: string | null = null;
@@ -241,14 +243,18 @@ export class FilterBarComponent implements OnInit {
     { value: 'lastYear', labelKey: 'periods.lastYear' },
   ];
 
-  cardOptions = signal<Option[]>([]);
+  accountOptions = signal<Option[]>([]);
   currencyOptions = signal<Option[]>([]);
   categoryOptions = signal<Option[]>([]);
   conceptOptions = signal<Option[]>([]);
 
   ngOnInit(): void {
-    this.expensesSvc.cards().subscribe((cards) =>
-      this.cardOptions.set(cards.map((c) => ({ label: c, value: c }))),
+    this.accountsSvc.list().subscribe((accounts) =>
+      this.accountOptions.set(
+        accounts
+          .filter((a) => !a.archived || a.id === this.account)
+          .map((a) => ({ label: a.name, value: a.id })),
+      ),
     );
     this.expensesSvc.currencies().subscribe((currencies) =>
       this.currencyOptions.set(currencies.map((c) => ({ label: c, value: c }))),
@@ -293,7 +299,7 @@ export class FilterBarComponent implements OnInit {
   activeFilterCount(): number {
     return [
       this.dateFrom || this.dateTo,
-      this.card,
+      this.account,
       this.currency,
       this.category,
       this.concept,
@@ -314,7 +320,7 @@ export class FilterBarComponent implements OnInit {
       this.dateFrom = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
       this.dateTo = dateTo ? new Date(`${dateTo}T00:00:00`) : null;
     }
-    this.card = p.get('card') ?? this.card;
+    this.account = p.get('account') ?? this.account;
     this.currency = p.get('currency') ?? this.currency;
     this.category = p.get('category') ?? this.category;
     this.concept = p.get('concept') ?? this.concept;
@@ -350,7 +356,8 @@ export class FilterBarComponent implements OnInit {
       this.dateFrom = s.dateFrom ? new Date(`${s.dateFrom}T00:00:00`) : null;
       this.dateTo = s.dateTo ? new Date(`${s.dateTo}T00:00:00`) : null;
     }
-    this.card = s.card ?? null;
+    // Legacy s.card (raw card string) predates accounts and is ignored.
+    this.account = s.account ?? null;
     this.currency = s.currency ?? null;
     this.category = s.category ?? null;
     this.concept = s.concept ?? null;
@@ -362,7 +369,7 @@ export class FilterBarComponent implements OnInit {
       period: this.period,
       dateFrom: this.toIso(this.dateFrom),
       dateTo: this.toIso(this.dateTo),
-      card: this.card ?? undefined,
+      account: this.account ?? undefined,
       currency: this.currency ?? undefined,
       category: this.category ?? undefined,
       concept: this.concept ?? undefined,
@@ -451,7 +458,7 @@ export class FilterBarComponent implements OnInit {
     const query: ExpenseQuery = {
       dateFrom: this.toIso(this.dateFrom),
       dateTo: this.toIso(this.dateTo),
-      card: this.card ?? undefined,
+      accountId: this.account ?? undefined,
       currency: this.currency ?? undefined,
       conceptId: this.concept ?? undefined,
       search: this.search?.trim() || undefined,
@@ -473,7 +480,7 @@ export class FilterBarComponent implements OnInit {
     this.period = 'custom';
     this.dateFrom = null;
     this.dateTo = null;
-    this.card = null;
+    this.account = null;
     this.currency = null;
     this.category = null;
     this.concept = null;

@@ -6,6 +6,9 @@ export interface SavedFilterState {
   period?: string;
   dateFrom?: string;
   dateTo?: string;
+  /** Account id. */
+  account?: string;
+  /** Legacy raw card value from before accounts existed; no longer applied. */
   card?: string;
   currency?: string;
   category?: string;
@@ -49,11 +52,48 @@ export interface Concept {
   totalValor: number;
 }
 
+export type AccountType =
+  | 'credit_card'
+  | 'debit_card'
+  | 'checking'
+  | 'savings'
+  | 'cash'
+  | 'other';
+
+/**
+ * A payment source (credit card, bank account, cash…). Auto-created at import
+ * from the statement's card columns; name/type/color are user-editable.
+ */
+export interface Account {
+  id: string;
+  name: string;
+  type: AccountType;
+  lastFour: string | null;
+  institution: string | null;
+  color: string | null;
+  archived: boolean;
+  creditLimit: number | null;
+  createdAt: string;
+}
+
+export interface AccountInput {
+  name?: string;
+  type?: AccountType;
+  lastFour?: string;
+  institution?: string;
+  color?: string;
+  archived?: boolean;
+  creditLimit?: number;
+}
+
 export type ExpenseKind = 'expense' | 'payment';
 
 export interface Expense {
   id: string;
   fecha: string;
+  accountId: string | null;
+  accountName: string | null;
+  accountColor: string | null;
   tarjeta: string | null;
   noTarjeta: string | null;
   nombre: string | null;
@@ -84,6 +124,8 @@ export interface ExpenseInput {
   valor: number;
   kind?: ExpenseKind;
   currency?: string;
+  /** Payment source; null detaches the expense from any account. */
+  accountId?: string | null;
   tarjeta?: string;
   noTarjeta?: string;
   tipoMovimiento?: string;
@@ -108,6 +150,7 @@ export interface PagedExpenses {
 export interface ExpenseQuery {
   dateFrom?: string;
   dateTo?: string;
+  accountId?: string;
   card?: string;
   search?: string;
   conceptId?: string;
@@ -137,7 +180,13 @@ export interface DashboardSummary {
     total: number;
     count: number;
   }[];
-  byCard: { card: string; total: number; count: number }[];
+  byAccount: {
+    accountId: string | null;
+    name: string;
+    color: string | null;
+    total: number;
+    count: number;
+  }[];
   byMonth: { month: string; total: number; count: number }[];
   /** Per-day totals within the range (day is YYYY-MM-DD). */
   byDay: { day: string; total: number; count: number }[];
@@ -184,7 +233,8 @@ export interface RecurringExpense {
   endDate: string | null;
   nextRunDate: string;
   active: boolean;
-  tarjeta: string | null;
+  accountId: string | null;
+  accountName: string | null;
   categoryId: string | null;
   categoryName: string | null;
   categoryColor: string | null;
@@ -201,7 +251,8 @@ export interface RecurringExpenseInput {
   startDate: string;
   /** Empty string clears the end date (open-ended). */
   endDate?: string;
-  tarjeta?: string;
+  /** Payment source copied onto generated expenses; null clears it. */
+  accountId?: string | null;
   active?: boolean;
   /** Assigns the merchant's concept to this category (all its expenses). */
   categoryId?: string;

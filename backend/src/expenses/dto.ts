@@ -64,6 +64,11 @@ export class CreateExpenseDto {
   @MaxLength(80)
   tipoMovimiento?: string;
 
+  /** Payment source (card / bank account) this expense belongs to. */
+  @IsOptional()
+  @IsUUID()
+  accountId?: string;
+
   /** Assigns the merchant's concept to this category (affects all its expenses). */
   @IsOptional()
   @IsUUID()
@@ -107,6 +112,11 @@ export class UpdateExpenseDto {
   @IsString()
   @MaxLength(80)
   tipoMovimiento?: string;
+
+  /** Payment source this expense belongs to; null detaches it. */
+  @IsOptional()
+  @IsUUID()
+  accountId?: string | null;
 
   /** Assigns the merchant's concept to this category (affects all its expenses). */
   @IsOptional()
@@ -163,6 +173,11 @@ export class BatchUpdateExpensesDto {
   @MaxLength(80)
   tipoMovimiento?: string;
 
+  /** Payment source to assign; null detaches the rows from any account. */
+  @IsOptional()
+  @IsUUID()
+  accountId?: string | null;
+
   /** Re-points expense rows at this merchant's concept (and its category). */
   @IsOptional()
   @IsString()
@@ -182,7 +197,12 @@ export class QueryExpensesDto {
   @IsString()
   dateTo?: string;
 
-  /** Filter by card: matches tarjeta or noTarjeta */
+  /** Filter by account (payment source). */
+  @IsOptional()
+  @IsUUID()
+  accountId?: string;
+
+  /** Legacy filter by raw card columns: matches tarjeta or noTarjeta */
   @IsOptional()
   @IsString()
   card?: string;
@@ -229,7 +249,7 @@ export class QueryExpensesDto {
   size?: number = 25;
 
   @IsOptional()
-  @IsIn(['fecha', 'valor', 'comercio', 'tarjeta'])
+  @IsIn(['fecha', 'valor', 'comercio', 'tarjeta', 'account'])
   sortField?: string = 'fecha';
 
   @IsOptional()

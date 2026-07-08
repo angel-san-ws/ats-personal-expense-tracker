@@ -8,6 +8,7 @@ import { LessThanOrEqual, Repository } from 'typeorm';
 import { Expense } from '../expenses/expense.entity';
 import { Concept } from '../concepts/concept.entity';
 import { Category } from '../categories/category.entity';
+import { AccountsService } from '../accounts/accounts.service';
 import { ConceptsService } from '../concepts/concepts.service';
 import { UsersService } from '../users/users.service';
 import { RatesService } from '../rates/rates.service';
@@ -35,7 +36,8 @@ export interface RecurringExpenseRow {
   endDate: string | null;
   nextRunDate: string;
   active: boolean;
-  tarjeta: string | null;
+  accountId: string | null;
+  accountName: string | null;
   categoryId: string | null;
   categoryName: string | null;
   categoryColor: string | null;
@@ -51,6 +53,7 @@ export class RecurringExpensesService {
     private readonly recurring: Repository<RecurringExpense>,
     @InjectRepository(Expense)
     private readonly expenses: Repository<Expense>,
+    private readonly accounts: AccountsService,
     private readonly concepts: ConceptsService,
     private readonly users: UsersService,
     private readonly rates: RatesService,
@@ -85,6 +88,9 @@ export class RecurringExpensesService {
   ): Promise<RecurringExpense> {
     const endDate = dto.endDate || null;
     this.validateDates(dto.startDate, endDate);
+    if (dto.accountId) {
+      await this.accounts.findOwned(userId, dto.accountId);
+    }
     const entity = this.recurring.create({
       userId,
       comercio: dto.comercio.trim(),
@@ -95,7 +101,7 @@ export class RecurringExpensesService {
       endDate,
       nextRunDate: dto.startDate,
       active: dto.active ?? true,
-      tarjeta: dto.tarjeta?.trim() || null,
+      accountId: dto.accountId ?? null,
     });
     const saved = await this.recurring.save(entity);
     if (dto.categoryId) {
@@ -134,7 +140,12 @@ export class RecurringExpensesService {
     }
     if (dto.startDate !== undefined) entity.startDate = dto.startDate;
     if (dto.endDate !== undefined) entity.endDate = dto.endDate || null;
-    if (dto.tarjeta !== undefined) entity.tarjeta = dto.tarjeta.trim() || null;
+    if (dto.accountId !== undefined) {
+      if (dto.accountId) {
+        await this.accounts.findOwned(userId, dto.accountId);
+      }
+      entity.accountId = dto.accountId || null;
+    }
     if (dto.active !== undefined) entity.active = dto.active;
 
     this.validateDates(entity.startDate, entity.endDate);
@@ -171,6 +182,7 @@ export class RecurringExpensesService {
       // (user, name) is unique on concepts, so this join never multiplies rows.
       .leftJoin(Concept, 'c', 'c.user_id = r.user_id AND c.name = r.comercio')
       .leftJoin(Category, 'cat', 'cat.id = c.category_id')
+      .leftJoin('r.account', 'a')
       .select([
         'r.id AS id',
         'r.comercio AS comercio',
@@ -181,7 +193,8 @@ export class RecurringExpensesService {
         'r.end_date AS "endDate"',
         'r.next_run_date AS "nextRunDate"',
         'r.active AS active',
-        'r.tarjeta AS tarjeta',
+        'r.account_id AS "accountId"',
+        'a.name AS "accountName"',
         'r.created_at AS "createdAt"',
         'c.category_id AS "categoryId"',
         'cat.name AS "categoryName"',
@@ -191,6 +204,7 @@ export class RecurringExpensesService {
       .addSelect('MAX(e.fecha)', 'lastGeneratedDate')
       .where('r.user_id = :userId', { userId })
       .groupBy('r.id')
+      .addGroupBy('a.name')
       .addGroupBy('c.category_id')
       .addGroupBy('cat.name')
       .addGroupBy('cat.color')
@@ -212,7 +226,8 @@ export class RecurringExpensesService {
       endDate: toIso(r.endDate),
       nextRunDate: toIso(r.nextRunDate) as string,
       active: r.active === true || r.active === 'true',
-      tarjeta: r.tarjeta,
+      accountId: r.accountId ?? null,
+      accountName: r.accountName ?? null,
       categoryId: r.categoryId ?? null,
       categoryName: r.categoryName ?? null,
       categoryColor: r.categoryColor ?? null,
@@ -274,6 +289,7 @@ export class RecurringExpensesService {
           exchangeRate: await rateFor(template.currency, next),
           kind: 'expense',
           conceptId,
+          accountId: template.accountId,
           tarjeta: template.tarjeta,
           recurringExpenseId: template.id,
         });

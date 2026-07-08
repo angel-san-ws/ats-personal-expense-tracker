@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from '../users/user.entity';
+import { Account } from '../accounts/account.entity';
 import { decimalTransformer } from '../common/decimal.transformer';
 
 export type RecurrenceFrequency = 'weekly' | 'biweekly' | 'monthly' | 'yearly';
@@ -67,7 +68,15 @@ export class RecurringExpense {
   @Column({ type: 'boolean', default: true })
   active: boolean;
 
-  /** Optional card label copied onto generated expenses. */
+  /** Optional payment source copied onto generated expenses. */
+  @ManyToOne(() => Account, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'account_id' })
+  account: Account | null;
+
+  @Column({ name: 'account_id', type: 'uuid', nullable: true })
+  accountId: string | null;
+
+  /** Legacy free-text card label; superseded by `account`. */
   @Column({ type: 'varchar', nullable: true })
   tarjeta: string | null;
 

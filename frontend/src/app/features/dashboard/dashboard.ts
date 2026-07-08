@@ -132,8 +132,14 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
               }
             </div>
             <div class="col-12 lg:col-6">
-              <p-card [header]="t('dashboard.byCard')">
-                <p-chart type="bar" [data]="cardChart()" [options]="barOptions()" height="18rem" />
+              <p-card [header]="t('dashboard.byAccount')">
+                <p-chart
+                  type="bar"
+                  [data]="accountChart()"
+                  [options]="barOptions()"
+                  height="18rem"
+                  (onDataSelect)="onAccountSelect($event)"
+                />
               </p-card>
             </div>
             <div class="col-12 lg:col-6">
@@ -356,13 +362,17 @@ export class DashboardComponent {
     };
   });
 
-  cardChart = computed(() => {
+  accountChart = computed(() => {
     const s = this.summary();
     if (!s) return { labels: [], datasets: [] };
     return {
-      labels: s.byCard.map((c) => c.card),
+      labels: s.byAccount.map((a) => a.name),
       datasets: [
-        { label: 'Total', data: s.byCard.map((c) => c.total), backgroundColor: '#3b82f6' },
+        {
+          label: 'Total',
+          data: s.byAccount.map((a) => a.total),
+          backgroundColor: s.byAccount.map((a) => a.color || '#3b82f6'),
+        },
       ],
     };
   });
@@ -382,6 +392,12 @@ export class DashboardComponent {
   onCategorySelect(event: { element?: { index: number } }): void {
     const cat = this.clickedItem(event, this.summary()?.byCategory);
     if (cat) this.drillDown({ category: cat.categoryId ?? 'none' });
+  }
+
+  /** Drill down: open the expenses list filtered by the clicked bar's account. */
+  onAccountSelect(event: { element?: { index: number } }): void {
+    const account = this.clickedItem(event, this.summary()?.byAccount);
+    if (account?.accountId) this.drillDown({ account: account.accountId });
   }
 
   /** Drill down: open the expenses list filtered by the clicked bar's merchant. */
@@ -405,7 +421,7 @@ export class DashboardComponent {
       queryParams: {
         dateFrom: q.dateFrom,
         dateTo: q.dateTo,
-        card: q.card,
+        account: q.accountId,
         currency: q.currency,
         concept: q.conceptId,
         search: q.search,

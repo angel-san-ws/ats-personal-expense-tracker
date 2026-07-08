@@ -96,9 +96,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
               <th pSortableColumn="fecha" style="width: 9rem">
                 {{ t('expenses.date') }} <p-sortIcon field="fecha" />
               </th>
-              <th pSortableColumn="tarjeta">{{ t('expenses.card') }} <p-sortIcon field="tarjeta" /></th>
-              <th>{{ t('expenses.cardNo') }}</th>
-              <th>{{ t('expenses.type') }}</th>
+              <th pSortableColumn="account">{{ t('expenses.account') }} <p-sortIcon field="account" /></th>
               <th pSortableColumn="comercio">
                 {{ t('payments.description') }} <p-sortIcon field="comercio" />
               </th>
@@ -113,9 +111,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
             <tr>
               <td><p-tableCheckbox [value]="p" /></td>
               <td>{{ p.fecha }}</td>
-              <td>{{ p.tarjeta || '—' }}</td>
-              <td>{{ p.noTarjeta || '—' }}</td>
-              <td>{{ p.tipoMovimiento || '—' }}</td>
+              <td>{{ p.accountName || '—' }}</td>
               <td class="font-medium">{{ p.comercio }}</td>
               <td class="text-right font-semibold text-green-600">{{ p.valor | atsCurrency: p.currency }}</td>
               <td class="text-center">
@@ -132,7 +128,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
 
           <ng-template #emptymessage>
             <tr>
-              <td colspan="8" class="text-center p-5 text-color-secondary">
+              <td colspan="6" class="text-center p-5 text-color-secondary">
                 {{ t('payments.empty') }}
               </td>
             </tr>
