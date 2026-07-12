@@ -261,7 +261,7 @@
   "import": {
     "title": "Importar estado de cuenta",
     "subtitle": "Sube un estado de cuenta en Excel (.xls / .xlsx) o CSV",
-    "dropHint": "Arrastra y suelta el archivo aquí o haz clic para explorar",
+    "dropHint": "Arrastra y suelta el archivo aquí, haz clic para explorar o pégalo (Ctrl+V)",
     "choose": "Elegir archivo",
     "upload": "Importar",
     "cancel": "Cancelar",
@@ -294,7 +294,7 @@
     "screenshotTitle": "Importar desde capturas de notificaciones",
     "screenshotHint": "Sube capturas de las alertas de consumo de tu banco (p. ej. BiMovil). El monto, comercio, fecha y tarjeta se leen automáticamente de cada notificación.",
     "chooseScreenshots": "Elegir capturas",
-    "screenshotDropHint": "Arrastra las capturas aquí o haz clic para buscarlas",
+    "screenshotDropHint": "Arrastra las capturas aquí, haz clic para buscarlas o pégalas (Ctrl+V)",
     "readingScreenshots": "Leyendo capturas… la primera importación puede tardar un poco más."
   },
   "categories": {

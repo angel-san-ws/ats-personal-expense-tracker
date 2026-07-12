@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -38,6 +38,22 @@ import { ImportBatch, ImportResult } from '../../core/models';
       <div class="grid">
         <div class="col-12 lg:col-7">
           <p-card>
+            <div class="flex align-items-center gap-2">
+              <p-checkbox
+                inputId="suggestCategories"
+                [binary]="true"
+                [(ngModel)]="suggestCategories"
+              />
+              <label for="suggestCategories" class="cursor-pointer">
+                {{ t('import.suggestCategories') }}
+              </label>
+            </div>
+            <small class="block mt-1 text-color-secondary">
+              {{ t('import.suggestCategoriesHint') }}
+            </small>
+          </p-card>
+
+          <p-card styleClass="mt-3">
             <p-fileupload
               #fu
               name="file"
@@ -80,22 +96,6 @@ import { ImportBatch, ImportResult } from '../../core/models';
                 </div>
               </ng-template>
             </p-fileupload>
-
-            <div class="mt-3">
-              <div class="flex align-items-center gap-2">
-                <p-checkbox
-                  inputId="suggestCategories"
-                  [binary]="true"
-                  [(ngModel)]="suggestCategories"
-                />
-                <label for="suggestCategories" class="cursor-pointer">
-                  {{ t('import.suggestCategories') }}
-                </label>
-              </div>
-              <small class="block mt-1 text-color-secondary">
-                {{ t('import.suggestCategoriesHint') }}
-              </small>
-            </div>
           </p-card>
 
           <p-card styleClass="mt-3">
@@ -154,22 +154,6 @@ import { ImportBatch, ImportResult } from '../../core/models';
                 {{ t('import.readingScreenshots') }}
               </div>
             }
-
-            <div class="mt-3">
-              <div class="flex align-items-center gap-2">
-                <p-checkbox
-                  inputId="suggestCategoriesScreenshots"
-                  [binary]="true"
-                  [(ngModel)]="suggestCategoriesScreenshots"
-                />
-                <label for="suggestCategoriesScreenshots" class="cursor-pointer">
-                  {{ t('import.suggestCategories') }}
-                </label>
-              </div>
-              <small class="block mt-1 text-color-secondary">
-                {{ t('import.suggestCategoriesHint') }}
-              </small>
-            </div>
           </p-card>
 
           @if (result(); as r) {
@@ -241,8 +225,7 @@ export class ImportComponent implements OnInit {
   result = signal<ImportResult | null>(null);
   batches = signal<ImportBatch[]>([]);
   screenshotBusy = signal(false);
-  suggestCategories = false;
-  suggestCategoriesScreenshots = false;
+  suggestCategories = true;
 
   ngOnInit(): void {
     this.loadBatches();
@@ -251,31 +234,60 @@ export class ImportComponent implements OnInit {
   onUpload(event: FileUploadHandlerEvent, fu: FileUpload): void {
     const file = event.files?.[0];
     if (!file) return;
+    this.importStatement(file, fu);
+  }
+
+  onUploadScreenshots(event: FileUploadHandlerEvent, fu: FileUpload): void {
+    const files = event.files ?? [];
+    if (files.length === 0) return;
+    this.importScreenshots(files, fu);
+  }
+
+  @HostListener('document:paste', ['$event'])
+  onPaste(event: ClipboardEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (
+      target &&
+      (target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable)
+    ) {
+      return;
+    }
+    const files = Array.from(event.clipboardData?.files ?? []);
+    const images = files.filter(
+      (f) => f.type === 'image/png' || f.type === 'image/jpeg',
+    );
+    const statement = files.find((f) => /\.(xlsx?|xlsm|csv)$/i.test(f.name));
+    if (!statement && images.length === 0) return;
+    event.preventDefault();
+    if (statement) this.importStatement(statement);
+    if (images.length > 0) this.importScreenshots(images);
+  }
+
+  private importStatement(file: File, fu?: FileUpload): void {
     this.importSvc.upload(file, this.suggestCategories).subscribe({
       next: (res) => this.handleImportSuccess(res, fu),
       error: (err) => this.handleImportError(err, fu),
     });
   }
 
-  onUploadScreenshots(event: FileUploadHandlerEvent, fu: FileUpload): void {
-    const files = event.files ?? [];
-    if (files.length === 0) return;
+  private importScreenshots(files: File[], fu?: FileUpload): void {
+    if (this.screenshotBusy()) return;
     this.screenshotBusy.set(true);
-    this.importSvc
-      .uploadScreenshots(files, this.suggestCategoriesScreenshots)
-      .subscribe({
-        next: (res) => {
-          this.screenshotBusy.set(false);
-          this.handleImportSuccess(res, fu);
-        },
-        error: (err) => {
-          this.screenshotBusy.set(false);
-          this.handleImportError(err, fu);
-        },
-      });
+    this.importSvc.uploadScreenshots(files, this.suggestCategories).subscribe({
+      next: (res) => {
+        this.screenshotBusy.set(false);
+        this.handleImportSuccess(res, fu);
+      },
+      error: (err) => {
+        this.screenshotBusy.set(false);
+        this.handleImportError(err, fu);
+      },
+    });
   }
 
-  private handleImportSuccess(res: ImportResult, fu: FileUpload): void {
+  private handleImportSuccess(res: ImportResult, fu?: FileUpload): void {
     this.result.set(res);
     this.messages.add({
       severity: res.rowCount === 0 ? 'info' : 'success',
@@ -294,20 +306,20 @@ export class ImportComponent implements OnInit {
               })
             : undefined,
     });
-    fu.clear();
+    fu?.clear();
     this.loadBatches();
   }
 
   private handleImportError(
     err: { error?: { message?: string } },
-    fu: FileUpload,
+    fu?: FileUpload,
   ): void {
     this.messages.add({
       severity: 'error',
       summary: this.transloco.translate('import.error'),
       detail: err?.error?.message,
     });
-    fu.clear();
+    fu?.clear();
   }
 
   confirmDeleteBatch(batch: ImportBatch): void {

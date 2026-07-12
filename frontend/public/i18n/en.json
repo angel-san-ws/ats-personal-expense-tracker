@@ -261,7 +261,7 @@
   "import": {
     "title": "Import statement",
     "subtitle": "Upload a bank statement in Excel (.xls / .xlsx) or CSV format",
-    "dropHint": "Drag & drop the file here or click to browse",
+    "dropHint": "Drag & drop the file here, click to browse, or paste it (Ctrl+V)",
     "choose": "Choose file",
     "upload": "Import",
     "cancel": "Cancel",
@@ -294,7 +294,7 @@
     "screenshotTitle": "Import from notification screenshots",
     "screenshotHint": "Upload screenshots of your bank's consumption alerts (e.g. BiMovil). Amount, merchant, date and card are read automatically from each notification.",
     "chooseScreenshots": "Choose screenshots",
-    "screenshotDropHint": "Drag & drop screenshots here or click to browse",
+    "screenshotDropHint": "Drag & drop screenshots here, click to browse, or paste them (Ctrl+V)",
     "readingScreenshots": "Reading screenshots… the first import may take a bit longer."
   },
   "categories": {
