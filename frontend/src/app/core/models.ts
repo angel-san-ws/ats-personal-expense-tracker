@@ -258,6 +258,38 @@ export interface RecurringExpenseInput {
   categoryId?: string;
 }
 
+/**
+ * Standing monthly spending limit in the user's base currency.
+ * A null categoryId is the overall budget across all spending.
+ */
+export interface Budget {
+  id: string;
+  categoryId: string | null;
+  amount: number;
+  createdAt: string;
+}
+
+export interface BudgetCategoryStatus {
+  categoryId: string;
+  categoryName: string;
+  color: string;
+  budgetId: string | null;
+  /** Monthly limit; null when no budget is set for the category. */
+  amount: number | null;
+  /** Spend for the month, converted to the base currency. */
+  spent: number;
+}
+
+/** Budget vs actual for one month. */
+export interface BudgetStatus {
+  month: string;
+  baseCurrency: string;
+  /** Foreign-currency rows without a rate, excluded from the spent totals. */
+  unconvertedCount: number;
+  overall: { budgetId: string | null; amount: number | null; spent: number };
+  categories: BudgetCategoryStatus[];
+}
+
 export interface ImportBatch {
   id: string;
   filename: string;

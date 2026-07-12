@@ -27,7 +27,7 @@ import {
  * which SUM ignores — they are excluded from converted totals and surface
  * through `unconvertedCount`.
  */
-const CONVERTED =
+export const CONVERTED =
   'e.valor * COALESCE(e.exchange_rate, CASE WHEN e.currency = :base THEN 1 END)';
 
 export interface ExpenseRow {

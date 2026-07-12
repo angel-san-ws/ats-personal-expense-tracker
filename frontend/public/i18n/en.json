@@ -10,6 +10,7 @@
     "import": "Import",
     "accounts": "Accounts",
     "categories": "Categories",
+    "budgets": "Budgets",
     "concepts": "Expense Concepts",
     "settings": "Settings",
     "logout": "Log out",
@@ -91,7 +92,9 @@
     "noData": "No data for the selected filters. Import a statement to get started.",
     "ratesFootnote": "Foreign-currency amounts converted to {{currency}} at the daily reference rate of each expense date",
     "unconverted": "{{count}} expense(s) in other currencies are pending conversion and excluded from the totals.",
-    "updateRates": "Update rates"
+    "updateRates": "Update rates",
+    "budgets": "Budgets",
+    "manageBudgets": "Manage budgets"
   },
   "filters": {
     "title": "Filters",
@@ -316,6 +319,22 @@
     "created": "Category created",
     "updated": "Category updated",
     "deleted": "Category deleted"
+  },
+  "budgets": {
+    "title": "Budgets",
+    "subtitle": "Set monthly spending limits and track your progress",
+    "overall": "Overall budget",
+    "category": "Category",
+    "budget": "Monthly budget",
+    "spent": "Spent",
+    "remaining": "Remaining",
+    "progress": "Progress",
+    "setBudget": "Set budget",
+    "saved": "Budget saved",
+    "deleted": "Budget removed",
+    "empty": "No categories yet. Create categories to budget them.",
+    "left": "left this month",
+    "over": "over budget"
   },
   "concepts": {
     "title": "Expense Concepts",

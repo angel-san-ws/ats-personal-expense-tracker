@@ -10,6 +10,7 @@
     "import": "Importar",
     "accounts": "Cuentas",
     "categories": "Categorías",
+    "budgets": "Presupuestos",
     "concepts": "Conceptos de gasto",
     "settings": "Configuración",
     "logout": "Cerrar sesión",
@@ -91,7 +92,9 @@
     "noData": "No hay datos para los filtros seleccionados. Importa un estado de cuenta para comenzar.",
     "ratesFootnote": "Montos en moneda extranjera convertidos a {{currency}} al tipo de cambio de referencia diario de la fecha de cada gasto",
     "unconverted": "{{count}} gasto(s) en otras monedas están pendientes de conversión y no se incluyen en los totales.",
-    "updateRates": "Actualizar tipos de cambio"
+    "updateRates": "Actualizar tipos de cambio",
+    "budgets": "Presupuestos",
+    "manageBudgets": "Administrar presupuestos"
   },
   "filters": {
     "title": "Filtros",
@@ -316,6 +319,22 @@
     "created": "Categoría creada",
     "updated": "Categoría actualizada",
     "deleted": "Categoría eliminada"
+  },
+  "budgets": {
+    "title": "Presupuestos",
+    "subtitle": "Define límites de gasto mensuales y da seguimiento a tu avance",
+    "overall": "Presupuesto general",
+    "category": "Categoría",
+    "budget": "Presupuesto mensual",
+    "spent": "Gastado",
+    "remaining": "Restante",
+    "progress": "Avance",
+    "setBudget": "Definir presupuesto",
+    "saved": "Presupuesto guardado",
+    "deleted": "Presupuesto eliminado",
+    "empty": "Aún no hay categorías. Crea categorías para presupuestarlas.",
+    "left": "disponibles este mes",
+    "over": "sobre el presupuesto"
   },
   "concepts": {
     "title": "Conceptos de gasto",

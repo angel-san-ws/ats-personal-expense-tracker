@@ -10,8 +10,9 @@ import { ButtonModule } from 'primeng/button';
 import { FilterBarComponent } from '../shared/filter-bar';
 import { AtsCurrencyPipe } from '../../core/currency.pipe';
 import { ExpensesService } from '../../core/services/expenses.service';
+import { BudgetsService } from '../../core/services/budgets.service';
 import { ThemeService } from '../../core/theme.service';
-import { DashboardSummary, ExpenseQuery } from '../../core/models';
+import { BudgetStatus, DashboardSummary, ExpenseQuery } from '../../core/models';
 
 @Component({
   selector: 'app-dashboard',
@@ -96,6 +97,59 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
           </div>
         }
 
+        @if (budgetStatus(); as b) {
+          @if (hasBudgets()) {
+            <p-card styleClass="mb-3">
+              <div class="flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                <span class="font-medium">{{ t('dashboard.budgets') }}</span>
+                <p-button
+                  size="small"
+                  [text]="true"
+                  icon="pi pi-arrow-right"
+                  iconPos="right"
+                  [label]="t('dashboard.manageBudgets')"
+                  (onClick)="goToBudgets()"
+                />
+              </div>
+              <div class="flex flex-column gap-2">
+                @if (b.overall.amount !== null) {
+                  <div class="flex align-items-center gap-2">
+                    <span class="text-sm" style="min-width: 9rem">{{ t('budgets.overall') }}</span>
+                    <div class="flex-1" style="background: var(--p-content-border-color); border-radius: 999px; height: 0.5rem; overflow: hidden;">
+                      <div
+                        style="height: 100%; border-radius: 999px"
+                        [style.width.%]="cappedPct(b.overall.spent / b.overall.amount * 100)"
+                        [style.background]="barColor(b.overall.spent / b.overall.amount * 100)"
+                      ></div>
+                    </div>
+                    <span class="text-sm text-color-secondary white-space-nowrap">
+                      {{ b.overall.spent | atsCurrency: b.baseCurrency }} / {{ b.overall.amount | atsCurrency: b.baseCurrency }}
+                    </span>
+                  </div>
+                }
+                @for (row of topBudgets(); track row.categoryId) {
+                  <div class="flex align-items-center gap-2">
+                    <span class="text-sm flex align-items-center gap-2" style="min-width: 9rem">
+                      <span class="color-swatch" [style.background]="row.color"></span>
+                      {{ row.categoryName }}
+                    </span>
+                    <div class="flex-1" style="background: var(--p-content-border-color); border-radius: 999px; height: 0.5rem; overflow: hidden;">
+                      <div
+                        style="height: 100%; border-radius: 999px"
+                        [style.width.%]="cappedPct(row.spent / row.amount! * 100)"
+                        [style.background]="barColor(row.spent / row.amount! * 100)"
+                      ></div>
+                    </div>
+                    <span class="text-sm text-color-secondary white-space-nowrap">
+                      {{ row.spent | atsCurrency: b.baseCurrency }} / {{ row.amount | atsCurrency: b.baseCurrency }}
+                    </span>
+                  </div>
+                }
+              </div>
+            </p-card>
+          }
+        }
+
         @if (s.count === 0) {
           <p-card>
             <div class="text-center p-5 text-color-secondary">
@@ -161,13 +215,33 @@ import { DashboardSummary, ExpenseQuery } from '../../core/models';
 })
 export class DashboardComponent {
   private expenses = inject(ExpensesService);
+  private budgets = inject(BudgetsService);
   private transloco = inject(TranslocoService);
   private router = inject(Router);
   private theme = inject(ThemeService);
 
   private query = signal<ExpenseQuery>({});
   summary = signal<DashboardSummary | null>(null);
+  budgetStatus = signal<BudgetStatus | null>(null);
   refreshingRates = signal(false);
+
+  hasBudgets = computed(() => {
+    const b = this.budgetStatus();
+    return (
+      !!b &&
+      (b.overall.amount !== null || b.categories.some((c) => c.amount !== null))
+    );
+  });
+
+  /** The 3 budgeted categories closest to (or past) their limit. */
+  topBudgets = computed(() => {
+    const b = this.budgetStatus();
+    if (!b) return [];
+    return b.categories
+      .filter((c) => c.amount !== null && c.amount > 0)
+      .sort((a, z) => z.spent / z.amount! - a.spent / a.amount!)
+      .slice(0, 3);
+  });
 
   /** Whether the filtered set contains foreign-currency (converted) amounts. */
   hasConverted = computed(() => {
@@ -434,6 +508,33 @@ export class DashboardComponent {
   onFilters(query: ExpenseQuery): void {
     this.query.set(query);
     this.expenses.summary(query).subscribe((s) => this.summary.set(s));
+    this.budgets
+      .status(this.budgetMonth(query))
+      .subscribe((b) => this.budgetStatus.set(b));
+  }
+
+  /**
+   * Budgets are monthly: use the filtered month when the range stays within
+   * one calendar month, otherwise fall back to the current month.
+   */
+  private budgetMonth(query: ExpenseQuery): string | undefined {
+    const from = query.dateFrom?.slice(0, 7);
+    const to = query.dateTo?.slice(0, 7);
+    return from && from === to ? from : undefined;
+  }
+
+  goToBudgets(): void {
+    this.router.navigate(['/budgets']);
+  }
+
+  cappedPct(pct: number): number {
+    return Math.min(pct, 100);
+  }
+
+  barColor(pct: number): string {
+    if (pct >= 100) return '#ef4444';
+    if (pct >= 80) return '#f59e0b';
+    return '#22c55e';
   }
 
   /** Backfill missing exchange rates, then reload the summary. */

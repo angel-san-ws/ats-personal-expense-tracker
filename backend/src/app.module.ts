@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Account } from './accounts/account.entity';
+import { Budget } from './budgets/budget.entity';
 import { User } from './users/user.entity';
 import { Category } from './categories/category.entity';
 import { Concept } from './concepts/concept.entity';
@@ -14,6 +15,7 @@ import { ExchangeRate } from './rates/exchange-rate.entity';
 
 import { AccountsModule } from './accounts/accounts.module';
 import { AuthModule } from './auth/auth.module';
+import { BudgetsModule } from './budgets/budgets.module';
 import { UsersModule } from './users/users.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ConceptsModule } from './concepts/concepts.module';
@@ -45,6 +47,7 @@ import { RatesModule } from './rates/rates.module';
             }),
         entities: [
           Account,
+          Budget,
           User,
           Category,
           Concept,
@@ -62,6 +65,7 @@ import { RatesModule } from './rates/rates.module';
     }),
     AccountsModule,
     AuthModule,
+    BudgetsModule,
     UsersModule,
     CategoriesModule,
     ConceptsModule,

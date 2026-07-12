@@ -211,6 +211,7 @@ export class MainLayoutComponent implements OnInit {
     { label: 'nav.dashboard', icon: 'pi pi-chart-bar', path: '/dashboard' },
     { label: 'nav.expenses', icon: 'pi pi-list', path: '/expenses' },
     { label: 'nav.payments', icon: 'pi pi-credit-card', path: '/payments' },
+    { label: 'nav.budgets', icon: 'pi pi-gauge', path: '/budgets' },
     { label: 'nav.recurring', icon: 'pi pi-sync', path: '/recurring' },
     { label: 'nav.import', icon: 'pi pi-upload', path: '/import' },
     { label: 'nav.accounts', icon: 'pi pi-wallet', path: '/accounts' },

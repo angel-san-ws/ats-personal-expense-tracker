@@ -64,6 +64,11 @@ export const routes: Routes = [
           import('./features/import/import').then((m) => m.ImportComponent),
       },
       {
+        path: 'budgets',
+        loadComponent: () =>
+          import('./features/budgets/budgets').then((m) => m.BudgetsComponent),
+      },
+      {
         path: 'recurring',
         loadComponent: () =>
           import('./features/recurring/recurring').then(
