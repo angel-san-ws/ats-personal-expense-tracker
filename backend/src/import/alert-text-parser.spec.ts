@@ -210,6 +210,28 @@ describe('parseAlertText', () => {
     ]);
   });
 
+  it('imports ATM withdrawals (Retiro por ... en el Cajero ...) as expenses', () => {
+    const text = `
+      08/07/2026  19:06
+      BiMovil: Retiro por Q.2000.00 en el Cajero
+      Shell Select Mariscal Z con su tarjeta
+      BICHEQUE3 08-Jul 19:06 Aut.265159.
+    `;
+    const alerts = parseAlertText(text);
+    expect(alerts).toEqual([
+      {
+        fecha: '2026-07-08',
+        comercio: 'CAJERO Shell Select Mariscal Z',
+        valor: 2000,
+        currency: 'GTQ',
+        tarjeta: 'BICHEQUE3',
+        autorizacion: '265159',
+        kind: 'expense',
+      },
+    ]);
+    expect(countAlertCandidates(text)).toBe(1);
+  });
+
   it('tolerates OCR garbling of the "en la" connector before Agencia', () => {
     const text =
       '04/07/2026 13:24 BiMovil: Credito por Q.2,500.00 Cuenta MONE1 en Ia Agencia DIGITAL 04-Jul 13:24 Autorizacion 228722. ' +

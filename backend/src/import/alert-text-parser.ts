@@ -11,6 +11,8 @@
  *   04-Jul 09:08 Autorizacion 109169.          (bank-account debit/transfer)
  *   BiMovil: Credito por Q.2,500.00 Cuenta MONE1 en la Agencia DIGITAL
  *   04-Jul 13:24 Autorizacion 228722.      (deposit → imported as a payment)
+ *   BiMovil: Retiro por Q.2000.00 en el Cajero Shell Select Mariscal Z con
+ *   su tarjeta BICHEQUE3 08-Jul 19:06 Aut.265159.  (ATM withdrawal → expense)
  *
  * The alert body carries no year; each notification is preceded by a delivery
  * timestamp header like "02/07/2026 20:24", which supplies it. Without a
@@ -62,8 +64,11 @@ const MONTHS: Record<string, number> = {
 const GAP = String.raw`[\s*•·>»›«‹®|]`;
 const GAP_TRIM_RE = new RegExp(String.raw`^${GAP}+|${GAP}+$`, 'g');
 
-/** Day + month tail shared by both alert templates, ending at the auth no. */
-const DATE_AUTH = String.raw`(\d{1,2})\s*[-–.\s]\s*([A-Za-zÁÉÍÓÚáéíóú1|]{3,4})\.?\s*(?:\d{1,2}:\d{2})?${GAP}*Autorizaci[oóeé]n\s*[.:]?\s*(\d+)`;
+/**
+ * Day + month tail shared by all alert templates, ending at the auth no.
+ * The bank writes the auth keyword as "Autorizacion" or abbreviated "Aut.".
+ */
+const DATE_AUTH = String.raw`(\d{1,2})\s*[-–.\s]\s*([A-Za-zÁÉÍÓÚáéíóú1|]{3,4})\.?\s*(?:\d{1,2}:\d{2})?${GAP}*Aut(?:orizaci[oóeé]n)?\s*[.:]?\s*(\d+)`;
 
 /**
  * Card purchase. `\s+`/`GAP+` throughout tolerates OCR line wraps and chrome
@@ -84,6 +89,17 @@ const CONSUMO_RE = new RegExp(
  */
 const MOVIMIENTO_RE = new RegExp(
   String.raw`(Debito|Credito)\s+por\s*(Q|US\$?|USD|\$|€)\s*[.,]?\s*([\d][\d.,]*)${GAP}+Cuenta\s+(\S+)[\s\S]{0,14}?\bAgencia\s+([\s\S]+?)${GAP}+${DATE_AUTH}`,
+  'gi',
+);
+
+/**
+ * ATM cash withdrawal (→ expense): the ATM location follows "en el Cajero"
+ * and the card follows "con su tarjeta". The "en el" connector is matched
+ * loosely ([\s\S]{0,8}?) for OCR garbling, like MOVIMIENTO's "en la". The
+ * location becomes the merchant, prefixed "CAJERO" (mirrors "AGENCIA").
+ */
+const RETIRO_RE = new RegExp(
+  String.raw`Retiro\s+por\s*(Q|US\$?|USD|\$|€)\s*[.,]?\s*([\d][\d.,]*)${GAP}+en\b[\s\S]{0,8}?\bCajero\s+([\s\S]+?)\s+con\s+su\s+tarjeta\s+(\S+)${GAP}+${DATE_AUTH}`,
   'gi',
 );
 
@@ -275,6 +291,20 @@ export function parseAlertText(
     });
   }
 
+  for (const m of text.matchAll(RETIRO_RE)) {
+    const [, symbol, amountRaw, cajeroRaw, cardRaw, dayRaw, monthRaw, auth] = m;
+    push(m.index ?? 0, {
+      symbol,
+      amountRaw,
+      merchantRaw: `CAJERO ${cajeroRaw}`,
+      cardRaw,
+      dayRaw,
+      monthRaw,
+      auth,
+      kind: 'expense',
+    });
+  }
+
   // Restore on-screen order (each pattern scans the text separately).
   return found.sort((a, b) => a.index - b.index).map((f) => f.alert);
 }
@@ -285,7 +315,8 @@ export function parseAlertText(
  * missed (OCR garbled a structural token).
  */
 export function countAlertCandidates(text: string): number {
-  const bodies = text.match(/(?:Consumo|Debito|Credito)\s+por/gi)?.length ?? 0;
+  const bodies =
+    text.match(/(?:Consumo|Debito|Credito|Retiro)\s+por/gi)?.length ?? 0;
   const headers = text.match(/BiM[oó]vil/gi)?.length ?? 0;
   return Math.max(bodies, headers);
 }

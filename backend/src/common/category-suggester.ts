@@ -5,12 +5,15 @@
  * both Spanish (bank statements use Spanish merchant strings) and English
  * brand names. Matching is accent- and case-insensitive.
  *
- * Two kinds of keywords per rule:
+ * Three kinds of keywords per rule:
  *  - `substrings`: matched anywhere in the merchant text (safe for long,
  *    distinctive terms like "FARMACIA" or "NETFLIX").
  *  - `words`: matched only against whole tokens, for short terms that would
  *    otherwise produce false positives ("UNO" inside "DESAYUNO", "BAR"
  *    inside "BARATILLO", …).
+ *  - `prefixes`: matched against the start of a token, for abbreviations that
+ *    may run into the next word ("DR." matches both "DR. JUAN" and "DR.JUAN"
+ *    without hitting "LA CUADRA.").
  *
  * Rule order matters: the first matching rule wins, so more specific rules
  * (e.g. Food & Dining with "UBER EATS") come before broader ones (Transport
@@ -21,6 +24,7 @@ interface SuggestionRule {
   category: string;
   substrings?: string[];
   words?: string[];
+  prefixes?: string[];
 }
 
 const RULES: SuggestionRule[] = [
@@ -204,6 +208,7 @@ const RULES: SuggestionRule[] = [
       'SMARTFIT',
     ],
     words: ['GYM', 'SPA'],
+    prefixes: ['DR.', 'DRA.'],
   },
   {
     category: 'Entertainment',
@@ -378,6 +383,10 @@ export function suggestCategoryName(merchant: string): string | null {
   for (const rule of RULES) {
     if (rule.substrings?.some((s) => text.includes(s))) return rule.category;
     if (rule.words?.some((w) => tokens.has(w))) return rule.category;
+    if (
+      rule.prefixes?.some((p) => [...tokens].some((tok) => tok.startsWith(p)))
+    )
+      return rule.category;
   }
   return null;
 }

@@ -31,6 +31,13 @@ const PAYMENT_DESC_RE =
   /p\.?\s*elec|(^|\s)pago(\b|\.)|(^|\s)abono|su\s*pago|pago\s*recibido|pago\s*gracias|nota\s*de\s*cr[eé]dito|(^|\s)dep[oó]sito|reverso|reversa|devoluci[oó]n/i;
 
 /**
+ * ATM cash withdrawals ("RETIRO POR...", "...CAJERO...") are money leaving
+ * the account, i.e. an expense — but on a bank-account statement they also
+ * drop the running balance, which alone would misread them as a payment.
+ */
+const ATM_DESC_RE = /(^|\s)retiros?(\b|\.)|cajero/i;
+
+/**
  * Classify a line as a payment or an expense.
  * Signals (any is sufficient):
  *  - the running balance (SALDO) decreased vs. the previous line → a credit/payment
@@ -47,9 +54,12 @@ function classifyKind(
 ): ParsedKind {
   const isCredit = /cr[eé]dito/i.test(row.tipoMovimiento ?? '');
   const looksLikePayment = PAYMENT_DESC_RE.test(row.comercio);
+  const isAtmWithdrawal = ATM_DESC_RE.test(row.comercio);
   const balanceDropped =
     row.saldo !== null && prevSaldo !== null && row.saldo < prevSaldo - 0.005;
-  return isCredit || looksLikePayment || balanceDropped ? 'payment' : 'expense';
+  return isCredit || looksLikePayment || (balanceDropped && !isAtmWithdrawal)
+    ? 'payment'
+    : 'expense';
 }
 
 export interface ParsedStatement {
