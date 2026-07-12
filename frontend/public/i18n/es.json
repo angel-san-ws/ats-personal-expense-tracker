@@ -259,8 +259,10 @@
     }
   },
   "import": {
-    "title": "Importar estado de cuenta",
-    "subtitle": "Sube un estado de cuenta en Excel (.xls / .xlsx) o CSV",
+    "title": "Importar",
+    "statementTitle": "Importar estado de cuenta",
+    "statementHint": "Sube un estado de cuenta en Excel (.xls / .xlsx) o CSV",
+    "bankSupportNotice": "Por ahora solo se admite Banco Industrial (Guatemala), tanto archivos de estado de cuenta como capturas de notificaciones. Pronto se agregarán más bancos.",
     "dropHint": "Arrastra y suelta el archivo aquí, haz clic para explorar o pégalo (Ctrl+V)",
     "choose": "Elegir archivo",
     "upload": "Importar",
@@ -292,7 +294,7 @@
     "deleteConfirm": "¿Eliminar \"{{filename}}\" y sus {{rows}} transacción(es) importadas? Esta acción no se puede deshacer.",
     "deleted": "Importación eliminada ({{rows}} transacciones eliminadas)",
     "screenshotTitle": "Importar desde capturas de notificaciones",
-    "screenshotHint": "Sube capturas de las alertas de consumo de tu banco (p. ej. BiMovil). El monto, comercio, fecha y tarjeta se leen automáticamente de cada notificación.",
+    "screenshotHint": "Sube capturas de las alertas de consumo de BiMovil (Banco Industrial). El monto, comercio, fecha y tarjeta se leen automáticamente de cada notificación.",
     "chooseScreenshots": "Elegir capturas",
     "screenshotDropHint": "Arrastra las capturas aquí, haz clic para buscarlas o pégalas (Ctrl+V)",
     "readingScreenshots": "Leyendo capturas… la primera importación puede tardar un poco más."

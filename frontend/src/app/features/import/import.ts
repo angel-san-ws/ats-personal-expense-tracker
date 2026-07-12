@@ -8,6 +8,7 @@ import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { CheckboxModule } from 'primeng/checkbox';
+import { MessageModule } from 'primeng/message';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { AtsCurrencyPipe } from '../../core/currency.pipe';
@@ -26,14 +27,19 @@ import { ImportBatch, ImportResult } from '../../core/models';
     ButtonModule,
     TooltipModule,
     CheckboxModule,
+    MessageModule,
     AtsCurrencyPipe,
   ],
   template: `
     <div *transloco="let t">
       <div class="page-header">
         <h1>{{ t('import.title') }}</h1>
-        <p>{{ t('import.subtitle') }}</p>
       </div>
+
+      <p-message severity="info" styleClass="w-full mb-3">
+        <i class="pi pi-info-circle mr-2"></i>
+        {{ t('import.bankSupportNotice') }}
+      </p-message>
 
       <div class="grid">
         <div class="col-12 lg:col-7">
@@ -54,6 +60,12 @@ import { ImportBatch, ImportResult } from '../../core/models';
           </p-card>
 
           <p-card styleClass="mt-3">
+            <div class="mb-2">
+              <div class="font-medium">{{ t('import.statementTitle') }}</div>
+              <small class="text-color-secondary">
+                {{ t('import.statementHint') }}
+              </small>
+            </div>
             <p-fileupload
               #fu
               name="file"

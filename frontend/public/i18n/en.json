@@ -259,8 +259,10 @@
     }
   },
   "import": {
-    "title": "Import statement",
-    "subtitle": "Upload a bank statement in Excel (.xls / .xlsx) or CSV format",
+    "title": "Import",
+    "statementTitle": "Import statement",
+    "statementHint": "Upload a bank statement in Excel (.xls / .xlsx) or CSV format",
+    "bankSupportNotice": "For now, only Banco Industrial (Guatemala) is supported — both statement files and notification screenshots. More banks will be added soon.",
     "dropHint": "Drag & drop the file here, click to browse, or paste it (Ctrl+V)",
     "choose": "Choose file",
     "upload": "Import",
@@ -292,7 +294,7 @@
     "deleteConfirm": "Delete \"{{filename}}\" and its {{rows}} imported transaction(s)? This cannot be undone.",
     "deleted": "Import deleted ({{rows}} transactions removed)",
     "screenshotTitle": "Import from notification screenshots",
-    "screenshotHint": "Upload screenshots of your bank's consumption alerts (e.g. BiMovil). Amount, merchant, date and card are read automatically from each notification.",
+    "screenshotHint": "Upload screenshots of BiMovil consumption alerts (Banco Industrial). Amount, merchant, date and card are read automatically from each notification.",
     "chooseScreenshots": "Choose screenshots",
     "screenshotDropHint": "Drag & drop screenshots here, click to browse, or paste them (Ctrl+V)",
     "readingScreenshots": "Reading screenshots… the first import may take a bit longer."
