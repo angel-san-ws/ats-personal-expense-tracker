@@ -12,6 +12,7 @@ import { FilterBarComponent } from '../shared/filter-bar';
 import { AtsCurrencyPipe } from '../../core/currency.pipe';
 import { ExpensesService } from '../../core/services/expenses.service';
 import { BudgetsService } from '../../core/services/budgets.service';
+import { BudgetAlertService } from '../../core/services/budget-alert.service';
 import { ImportService } from '../../core/services/import.service';
 import { ThemeService } from '../../core/theme.service';
 import {
@@ -95,6 +96,15 @@ import {
                     [label]="t('dashboard.reminder.viewPayments')"
                     (onClick)="goToPayments(r.accountId)"
                   />
+                  <p-button
+                    size="small"
+                    [text]="true"
+                    [rounded]="true"
+                    severity="secondary"
+                    icon="pi pi-times"
+                    [ariaLabel]="t('dashboard.reminder.dismiss')"
+                    (onClick)="dismissReminder(r)"
+                  />
                 </span>
               </div>
             }
@@ -176,18 +186,18 @@ import {
                 />
               </div>
               <div class="flex flex-column gap-2">
-                @if (b.overall.amount !== null) {
+                @if (b.overall.effectiveAmount !== null) {
                   <div class="flex align-items-center gap-2">
                     <span class="text-sm" style="min-width: 9rem">{{ t('budgets.overall') }}</span>
                     <div class="flex-1" style="background: var(--p-content-border-color); border-radius: 999px; height: 0.5rem; overflow: hidden;">
                       <div
                         style="height: 100%; border-radius: 999px"
-                        [style.width.%]="cappedPct(b.overall.spent / b.overall.amount * 100)"
-                        [style.background]="barColor(b.overall.spent / b.overall.amount * 100)"
+                        [style.width.%]="cappedPct(b.overall.spent / b.overall.effectiveAmount * 100)"
+                        [style.background]="barColor(b.overall.spent / b.overall.effectiveAmount * 100)"
                       ></div>
                     </div>
                     <span class="text-sm text-color-secondary white-space-nowrap">
-                      {{ b.overall.spent | atsCurrency: b.baseCurrency }} / {{ b.overall.amount | atsCurrency: b.baseCurrency }}
+                      {{ b.overall.spent | atsCurrency: b.baseCurrency }} / {{ b.overall.effectiveAmount | atsCurrency: b.baseCurrency }}
                     </span>
                   </div>
                 }
@@ -200,12 +210,12 @@ import {
                     <div class="flex-1" style="background: var(--p-content-border-color); border-radius: 999px; height: 0.5rem; overflow: hidden;">
                       <div
                         style="height: 100%; border-radius: 999px"
-                        [style.width.%]="cappedPct(row.spent / row.amount! * 100)"
-                        [style.background]="barColor(row.spent / row.amount! * 100)"
+                        [style.width.%]="cappedPct(row.spent / row.effectiveAmount! * 100)"
+                        [style.background]="barColor(row.spent / row.effectiveAmount! * 100)"
                       ></div>
                     </div>
                     <span class="text-sm text-color-secondary white-space-nowrap">
-                      {{ row.spent | atsCurrency: b.baseCurrency }} / {{ row.amount | atsCurrency: b.baseCurrency }}
+                      {{ row.spent | atsCurrency: b.baseCurrency }} / {{ row.effectiveAmount | atsCurrency: b.baseCurrency }}
                     </span>
                   </div>
                 }
@@ -280,6 +290,7 @@ import {
 export class DashboardComponent {
   private expenses = inject(ExpensesService);
   private budgets = inject(BudgetsService);
+  private alerts = inject(BudgetAlertService);
   private imports = inject(ImportService);
   private transloco = inject(TranslocoService);
   private router = inject(Router);
@@ -300,7 +311,8 @@ export class DashboardComponent {
     const b = this.budgetStatus();
     return (
       !!b &&
-      (b.overall.amount !== null || b.categories.some((c) => c.amount !== null))
+      (b.overall.effectiveAmount !== null ||
+        b.categories.some((c) => c.effectiveAmount !== null))
     );
   });
 
@@ -309,8 +321,11 @@ export class DashboardComponent {
     const b = this.budgetStatus();
     if (!b) return [];
     return b.categories
-      .filter((c) => c.amount !== null && c.amount > 0)
-      .sort((a, z) => z.spent / z.amount! - a.spent / a.amount!)
+      .filter((c) => c.effectiveAmount !== null && c.effectiveAmount > 0)
+      .sort(
+        (a, z) =>
+          z.spent / z.effectiveAmount! - a.spent / a.effectiveAmount!,
+      )
       .slice(0, 3);
   });
 
@@ -579,9 +594,11 @@ export class DashboardComponent {
   onFilters(query: ExpenseQuery): void {
     this.query.set(query);
     this.expenses.summary(query).subscribe((s) => this.summary.set(s));
-    this.budgets
-      .status(this.budgetMonth(query))
-      .subscribe((b) => this.budgetStatus.set(b));
+    this.budgets.status(this.budgetMonth(query)).subscribe((b) => {
+      this.budgetStatus.set(b);
+      // Keep the over-budget nav badge fresh (only current-month statuses apply).
+      this.alerts.updateFrom(b);
+    });
   }
 
   /**
@@ -601,6 +618,17 @@ export class DashboardComponent {
   /** Open the payments list filtered by the reminder's account. */
   goToPayments(accountId: string): void {
     this.router.navigate(['/payments'], { queryParams: { account: accountId } });
+  }
+
+  /** Hide the reminder until the account's next cycle (persisted server-side). */
+  dismissReminder(reminder: PaymentReminder): void {
+    this.imports.dismissReminder(reminder.accountId, reminder.dueDate).subscribe({
+      next: () =>
+        this.reminders.update((list) =>
+          list.filter((r) => r.accountId !== reminder.accountId),
+        ),
+      error: () => {},
+    });
   }
 
   cappedPct(pct: number): number {

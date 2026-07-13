@@ -105,7 +105,8 @@
       "minPayment": "Pago mínimo",
       "expectedPayment": "Esperado",
       "paidAmount": "Pagado",
-      "viewPayments": "Pagos"
+      "viewPayments": "Pagos",
+      "dismiss": "Descartar recordatorio"
     }
   },
   "filters": {
@@ -350,7 +351,13 @@
     "deleted": "Presupuesto eliminado",
     "empty": "Aún no hay categorías. Crea categorías para presupuestarlas.",
     "left": "disponibles este mes",
-    "over": "sobre el presupuesto"
+    "over": "sobre el presupuesto",
+    "thisMonth": "Este mes",
+    "defaultAmount": "Predeterminado",
+    "alert": {
+      "title": "Presupuesto excedido",
+      "detail": "Por encima del límite mensual: {{names}}"
+    }
   },
   "concepts": {
     "title": "Conceptos de gasto",

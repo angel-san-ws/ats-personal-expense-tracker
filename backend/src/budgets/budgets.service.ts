@@ -12,13 +12,24 @@ import { CategoriesService } from '../categories/categories.service';
 import { UsersService } from '../users/users.service';
 import { BudgetStatusQueryDto, UpsertBudgetDto } from './dto';
 
-export interface BudgetCategoryStatus {
+/** The limits that apply to one target (a category or the overall budget). */
+export interface BudgetLimit {
+  /** Standing budget row; null when none is set. */
+  budgetId: string | null;
+  /** Standing monthly limit in the base currency; null when none is set. */
+  amount: number | null;
+  /** Override row for the requested month; null when none is set. */
+  overrideId: string | null;
+  /** Override amount for the requested month; null when none is set. */
+  overrideAmount: number | null;
+  /** The limit in effect for the month: override, else the standing amount. */
+  effectiveAmount: number | null;
+}
+
+export interface BudgetCategoryStatus extends BudgetLimit {
   categoryId: string;
   categoryName: string;
   color: string;
-  budgetId: string | null;
-  /** Monthly limit in the base currency; null when no budget is set. */
-  amount: number | null;
   /** Spend for the month, converted to the base currency. */
   spent: number;
 }
@@ -30,7 +41,7 @@ export interface BudgetStatus {
   /** Foreign-currency rows without a rate, excluded from the spent totals. */
   unconvertedCount: number;
   /** All spending in the month (uncategorized included) vs the overall budget. */
-  overall: { budgetId: string | null; amount: number | null; spent: number };
+  overall: BudgetLimit & { spent: number };
   /** One row per user category, budgeted or not. */
   categories: BudgetCategoryStatus[];
 }
@@ -55,24 +66,30 @@ export class BudgetsService {
 
   /**
    * Create or replace the budget for a category (or the overall budget when
-   * categoryId is null/omitted). Upserting keeps at most one row per target —
-   * the unique index can't enforce that for the NULL (overall) row.
+   * categoryId is null/omitted). With a month, targets that month's override
+   * row instead of the standing budget. Upserting keeps at most one row per
+   * target — the unique index can't enforce that for NULL columns.
    */
   async upsert(userId: string, dto: UpsertBudgetDto): Promise<Budget> {
     const categoryId = dto.categoryId ?? null;
+    const month = dto.month ?? null;
     if (categoryId) {
       // Also asserts ownership (404 for someone else's category).
       await this.categories.findOne(userId, categoryId);
     }
     const existing = await this.budgets.findOne({
-      where: { userId, categoryId: categoryId ?? IsNull() },
+      where: {
+        userId,
+        categoryId: categoryId ?? IsNull(),
+        month: month ?? IsNull(),
+      },
     });
     if (existing) {
       existing.amount = dto.amount;
       return this.budgets.save(existing);
     }
     return this.budgets.save(
-      this.budgets.create({ userId, categoryId, amount: dto.amount }),
+      this.budgets.create({ userId, categoryId, month, amount: dto.amount }),
     );
   }
 
@@ -119,31 +136,38 @@ export class BudgetsService {
     const spentByCategory = new Map(
       spentRows.map((r) => [r.categoryId, parseFloat(r.spent) || 0]),
     );
-    const budgetByCategory = new Map(budgets.map((b) => [b.categoryId, b]));
+    const standing = new Map(
+      budgets.filter((b) => !b.month).map((b) => [b.categoryId, b]),
+    );
+    const overrides = new Map(
+      budgets.filter((b) => b.month === month).map((b) => [b.categoryId, b]),
+    );
+    const limitFor = (categoryId: string | null): BudgetLimit => {
+      const budget = standing.get(categoryId);
+      const override = overrides.get(categoryId);
+      return {
+        budgetId: budget?.id ?? null,
+        amount: budget?.amount ?? null,
+        overrideId: override?.id ?? null,
+        overrideAmount: override?.amount ?? null,
+        effectiveAmount: override?.amount ?? budget?.amount ?? null,
+      };
+    };
 
-    const overallBudget = budgetByCategory.get(null);
     const totalSpent = [...spentByCategory.values()].reduce((a, b) => a + b, 0);
 
     return {
       month,
       baseCurrency: base,
       unconvertedCount,
-      overall: {
-        budgetId: overallBudget?.id ?? null,
-        amount: overallBudget?.amount ?? null,
-        spent: totalSpent,
-      },
-      categories: categories.map((c) => {
-        const budget = budgetByCategory.get(c.id);
-        return {
-          categoryId: c.id,
-          categoryName: c.name,
-          color: c.color,
-          budgetId: budget?.id ?? null,
-          amount: budget?.amount ?? null,
-          spent: spentByCategory.get(c.id) ?? 0,
-        };
-      }),
+      overall: { ...limitFor(null), spent: totalSpent },
+      categories: categories.map((c) => ({
+        categoryId: c.id,
+        categoryName: c.name,
+        color: c.color,
+        ...limitFor(c.id),
+        spent: spentByCategory.get(c.id) ?? 0,
+      })),
     };
   }
 }

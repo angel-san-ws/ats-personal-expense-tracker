@@ -105,7 +105,8 @@
       "minPayment": "Min. payment",
       "expectedPayment": "Expected",
       "paidAmount": "Paid",
-      "viewPayments": "Payments"
+      "viewPayments": "Payments",
+      "dismiss": "Dismiss reminder"
     }
   },
   "filters": {
@@ -350,7 +351,13 @@
     "deleted": "Budget removed",
     "empty": "No categories yet. Create categories to budget them.",
     "left": "left this month",
-    "over": "over budget"
+    "over": "over budget",
+    "thisMonth": "This month",
+    "defaultAmount": "Default",
+    "alert": {
+      "title": "Over budget",
+      "detail": "Over the monthly limit: {{names}}"
+    }
   },
   "concepts": {
     "title": "Expense Concepts",

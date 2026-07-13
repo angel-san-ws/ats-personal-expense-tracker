@@ -12,13 +12,14 @@ import { Category } from '../categories/category.entity';
 import { decimalTransformer } from '../common/decimal.transformer';
 
 /**
- * A standing monthly spending limit in the user's base currency. One row per
- * category, plus at most one row with a NULL category — the overall budget
- * across all spending. The same amount applies to every month; per-month
- * progress is computed on the fly from expenses.
+ * A monthly spending limit in the user's base currency. One row per category,
+ * plus at most one row with a NULL category — the overall budget across all
+ * spending. A NULL `month` is the standing amount that applies to every month;
+ * a row with a month (YYYY-MM) overrides the standing amount for just that
+ * month. Per-month progress is computed on the fly from expenses.
  */
 @Entity('budgets')
-@Index(['user', 'category'], { unique: true })
+@Index(['user', 'category', 'month'], { unique: true })
 export class Budget {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -37,6 +38,10 @@ export class Budget {
 
   @Column({ name: 'category_id', type: 'uuid', nullable: true })
   categoryId: string | null;
+
+  /** Month (YYYY-MM) this amount applies to; NULL = every month (standing). */
+  @Column({ type: 'varchar', length: 7, nullable: true })
+  month: string | null;
 
   /** Monthly limit, always in the user's base currency. */
   @Column({

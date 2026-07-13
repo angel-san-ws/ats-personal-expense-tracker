@@ -109,6 +109,14 @@ export class Account {
   })
   paymentAmount: number | null;
 
+  /**
+   * Payment reminders with a due date on or before this date are dismissed
+   * (hidden). Set to the reminder's due date when the user dismisses it, so
+   * the next cycle's reminder shows again.
+   */
+  @Column({ name: 'reminder_dismissed_through', type: 'date', nullable: true })
+  reminderDismissedThrough: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

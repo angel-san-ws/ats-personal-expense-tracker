@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, IsNull, Not } from 'typeorm';
 
@@ -26,6 +26,7 @@ interface BatchRow {
   dueDate: string;
   minimumPayment: string | null;
   pastDueBalance: string | null;
+  dismissedThrough: string | null;
 }
 
 interface PaymentRow {
@@ -46,7 +47,8 @@ export class PaymentRemindersService {
    * - the most recent imported statement with a payment due date;
    * - the account's user-configured monthly due day (`paymentDueDay`).
    * Either way a reminder settles when a payment is registered after the
-   * cycle's start (statement cut / previous monthly occurrence).
+   * cycle's start (statement cut / previous monthly occurrence), and stays
+   * hidden while the account's dismissal mark covers its due date.
    */
   async list(
     userId: string,
@@ -105,39 +107,70 @@ export class PaymentRemindersService {
       if (reminder) byAccount.set(a.id, reminder);
     }
 
-    return [...byAccount.values()].sort((a, b) =>
-      a.dueDate.localeCompare(b.dueDate),
-    );
+    // Filtering last (instead of skipping while building) keeps a dismissed
+    // statement reminder occupying its account slot, so the manual fallback
+    // can't resurface the same cycle under a slightly different date.
+    const dismissedThrough = new Map<string, string | null>([
+      ...batches.map((b) => [b.accountId, b.dismissedThrough] as const),
+      ...manualAccounts.map((a) => [a.id, a.reminderDismissedThrough] as const),
+    ]);
+    return [...byAccount.values()]
+      .filter((r) => {
+        const through = dismissedThrough.get(r.accountId);
+        return !through || r.dueDate > through;
+      })
+      .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+  }
+
+  /**
+   * Dismiss an account's reminder: hide reminders due on or before `dueDate`
+   * (the dismissed reminder's due date). The next cycle shows again.
+   */
+  async dismiss(
+    userId: string,
+    accountId: string,
+    dueDate: string,
+  ): Promise<void> {
+    const accounts = this.dataSource.getRepository(Account);
+    const account = await accounts.findOne({
+      where: { id: accountId, userId },
+    });
+    if (!account) throw new NotFoundException('Account not found');
+    account.reminderDismissedThrough = dueDate;
+    await accounts.save(account);
   }
 
   /** Per account, the newest imported statement carrying a due date. */
   private latestBatches(userId: string): Promise<BatchRow[]> {
-    return this.dataSource
-      .getRepository(ImportBatch)
-      .createQueryBuilder('b')
-      .innerJoin(
-        Expense,
-        'e',
-        'e.import_batch_id = b.id AND e.account_id IS NOT NULL',
-      )
-      .innerJoin(Account, 'a', 'a.id = e.account_id')
-      .distinctOn(['e.account_id'])
-      .select('e.account_id', 'accountId')
-      .addSelect('a.name', 'accountName')
-      .addSelect('a.color', 'accountColor')
-      .addSelect('a.last_four', 'lastFour')
-      // ::text keeps dates as plain YYYY-MM-DD instead of JS Dates.
-      .addSelect('b.statement_date::text', 'statementDate')
-      .addSelect('b.payment_due_date::text', 'dueDate')
-      .addSelect('b.minimum_payment', 'minimumPayment')
-      .addSelect('b.past_due_balance', 'pastDueBalance')
-      .where('b.user_id = :userId', { userId })
-      .andWhere('b.payment_due_date IS NOT NULL')
-      .andWhere('a.archived = false')
-      .orderBy('e.account_id')
-      .addOrderBy('b.payment_due_date', 'DESC')
-      .addOrderBy('b.imported_at', 'DESC')
-      .getRawMany();
+    return (
+      this.dataSource
+        .getRepository(ImportBatch)
+        .createQueryBuilder('b')
+        .innerJoin(
+          Expense,
+          'e',
+          'e.import_batch_id = b.id AND e.account_id IS NOT NULL',
+        )
+        .innerJoin(Account, 'a', 'a.id = e.account_id')
+        .distinctOn(['e.account_id'])
+        .select('e.account_id', 'accountId')
+        .addSelect('a.name', 'accountName')
+        .addSelect('a.color', 'accountColor')
+        .addSelect('a.last_four', 'lastFour')
+        // ::text keeps dates as plain YYYY-MM-DD instead of JS Dates.
+        .addSelect('b.statement_date::text', 'statementDate')
+        .addSelect('b.payment_due_date::text', 'dueDate')
+        .addSelect('b.minimum_payment', 'minimumPayment')
+        .addSelect('b.past_due_balance', 'pastDueBalance')
+        .addSelect('a.reminder_dismissed_through::text', 'dismissedThrough')
+        .where('b.user_id = :userId', { userId })
+        .andWhere('b.payment_due_date IS NOT NULL')
+        .andWhere('a.archived = false')
+        .orderBy('e.account_id')
+        .addOrderBy('b.payment_due_date', 'DESC')
+        .addOrderBy('b.imported_at', 'DESC')
+        .getRawMany()
+    );
   }
 
   /** Payments per account since the earliest possible cycle coverage. */

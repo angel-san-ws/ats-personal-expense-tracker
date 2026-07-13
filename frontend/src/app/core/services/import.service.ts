@@ -33,6 +33,14 @@ export class ImportService {
     );
   }
 
+  /** Hide an account's reminder until after the given due date. */
+  dismissReminder(accountId: string, dueDate: string): Observable<void> {
+    return this.http.post<void>(`${API_BASE}/import/payment-reminders/dismiss`, {
+      accountId,
+      dueDate,
+    });
+  }
+
   batches(): Observable<ImportBatch[]> {
     return this.http.get<ImportBatch[]>(`${API_BASE}/import/batches`);
   }

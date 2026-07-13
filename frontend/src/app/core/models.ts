@@ -77,6 +77,8 @@ export interface Account {
   paymentDueDay: number | null;
   /** Expected payment amount shown on manual reminders. */
   paymentAmount: number | null;
+  /** Payment reminders due on or before this date are dismissed (hidden). */
+  reminderDismissedThrough: string | null;
   createdAt: string;
 }
 
@@ -267,23 +269,35 @@ export interface RecurringExpenseInput {
 }
 
 /**
- * Standing monthly spending limit in the user's base currency.
- * A null categoryId is the overall budget across all spending.
+ * Monthly spending limit in the user's base currency.
+ * A null categoryId is the overall budget across all spending; a null month
+ * is the standing amount, otherwise an override for that month (YYYY-MM).
  */
 export interface Budget {
   id: string;
   categoryId: string | null;
+  month: string | null;
   amount: number;
   createdAt: string;
 }
 
-export interface BudgetCategoryStatus {
+/** The limits that apply to one target (a category or the overall budget). */
+export interface BudgetLimit {
+  /** Standing budget row; null when none is set. */
+  budgetId: string | null;
+  /** Standing monthly limit; null when none is set. */
+  amount: number | null;
+  /** Override row for the viewed month; null when none is set. */
+  overrideId: string | null;
+  overrideAmount: number | null;
+  /** The limit in effect for the month: override, else the standing amount. */
+  effectiveAmount: number | null;
+}
+
+export interface BudgetCategoryStatus extends BudgetLimit {
   categoryId: string;
   categoryName: string;
   color: string;
-  budgetId: string | null;
-  /** Monthly limit; null when no budget is set for the category. */
-  amount: number | null;
   /** Spend for the month, converted to the base currency. */
   spent: number;
 }
@@ -294,7 +308,7 @@ export interface BudgetStatus {
   baseCurrency: string;
   /** Foreign-currency rows without a rate, excluded from the spent totals. */
   unconvertedCount: number;
-  overall: { budgetId: string | null; amount: number | null; spent: number };
+  overall: BudgetLimit & { spent: number };
   categories: BudgetCategoryStatus[];
 }
 

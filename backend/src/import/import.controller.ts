@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   ParseUUIDPipe,
   Post,
@@ -15,6 +16,7 @@ import {
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ImportService } from './import.service';
 import { PaymentRemindersService } from './payment-reminders.service';
+import { DismissReminderDto } from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthUser } from '../auth/current-user.decorator';
@@ -96,6 +98,20 @@ export class ImportController {
   @Get('payment-reminders')
   paymentRemindersList(@CurrentUser() user: AuthUser) {
     return this.paymentReminders.list(user.userId);
+  }
+
+  /** Hide an account's reminder until after the given due date. */
+  @Post('payment-reminders/dismiss')
+  @HttpCode(204)
+  dismissReminder(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: DismissReminderDto,
+  ) {
+    return this.paymentReminders.dismiss(
+      user.userId,
+      dto.accountId,
+      dto.dueDate,
+    );
   }
 
   @Delete('batches/:id')

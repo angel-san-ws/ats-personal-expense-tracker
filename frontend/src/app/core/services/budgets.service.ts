@@ -18,11 +18,20 @@ export class BudgetsService {
     return this.http.get<BudgetStatus>(`${API_BASE}/budgets/status`, { params });
   }
 
-  /** Set the budget for a category, or the overall budget when categoryId is null. */
-  upsert(categoryId: string | null, amount: number): Observable<Budget> {
+  /**
+   * Set the budget for a category, or the overall budget when categoryId is
+   * null. With a month (YYYY-MM), sets that month's override instead of the
+   * standing amount.
+   */
+  upsert(
+    categoryId: string | null,
+    amount: number,
+    month?: string,
+  ): Observable<Budget> {
     return this.http.put<Budget>(`${API_BASE}/budgets`, {
       categoryId: categoryId ?? undefined,
       amount,
+      month,
     });
   }
 

@@ -16,6 +16,16 @@ export class UpsertBudgetDto {
   @IsNumber()
   @IsPositive()
   amount: number;
+
+  /**
+   * Set the amount for this month only (YYYY-MM), overriding the standing
+   * budget. Omit (or null) to set the standing amount for every month.
+   */
+  @IsOptional()
+  @Matches(/^\d{4}-(0[1-9]|1[0-2])$/, {
+    message: 'month must look like 2026-07',
+  })
+  month?: string | null;
 }
 
 export class BudgetStatusQueryDto {

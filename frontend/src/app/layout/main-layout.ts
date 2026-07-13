@@ -14,12 +14,15 @@ import { LanguageService } from '../core/i18n/language.service';
 import { ThemeService } from '../core/theme.service';
 import { UsersService } from '../core/services/users.service';
 import { RecurringExpensesService } from '../core/services/recurring-expenses.service';
+import { BudgetAlertService } from '../core/services/budget-alert.service';
 import { AppLanguage, AppTheme } from '../core/models';
 
 interface NavLink {
   label: string;
   icon: string;
   path: string;
+  /** Attention counter (e.g. over-budget categories); omitted = no badge. */
+  badge?: string;
 }
 
 @Component({
@@ -72,6 +75,8 @@ interface NavLink {
                 [text]="!rla.isActive"
                 [outlined]="rla.isActive"
                 size="small"
+                [badge]="link.badge"
+                badgeSeverity="danger"
               />
             </a>
           }
@@ -165,6 +170,8 @@ interface NavLink {
                 [text]="!rla.isActive"
                 [outlined]="rla.isActive"
                 styleClass="w-full justify-content-start"
+                [badge]="link.badge"
+                badgeSeverity="danger"
               />
             </a>
           }
@@ -196,6 +203,7 @@ export class MainLayoutComponent implements OnInit {
   private users = inject(UsersService);
   private transloco = inject(TranslocoService);
   private recurring = inject(RecurringExpensesService);
+  private budgetAlerts = inject(BudgetAlertService);
 
   menuOpen = signal(false);
 
@@ -207,21 +215,31 @@ export class MainLayoutComponent implements OnInit {
     { label: 'Español', value: 'es' as AppLanguage },
   ];
 
-  navLinks = signal<NavLink[]>([
-    { label: 'nav.dashboard', icon: 'pi pi-chart-bar', path: '/dashboard' },
-    { label: 'nav.expenses', icon: 'pi pi-list', path: '/expenses' },
-    { label: 'nav.payments', icon: 'pi pi-credit-card', path: '/payments' },
-    { label: 'nav.budgets', icon: 'pi pi-gauge', path: '/budgets' },
-    { label: 'nav.recurring', icon: 'pi pi-sync', path: '/recurring' },
-    { label: 'nav.import', icon: 'pi pi-upload', path: '/import' },
-    { label: 'nav.accounts', icon: 'pi pi-wallet', path: '/accounts' },
-    { label: 'nav.categories', icon: 'pi pi-tags', path: '/categories' },
-    { label: 'nav.concepts', icon: 'pi pi-sitemap', path: '/concepts' },
-  ]);
+  navLinks = computed<NavLink[]>(() => {
+    const overBudget = this.budgetAlerts.overCount();
+    return [
+      { label: 'nav.dashboard', icon: 'pi pi-chart-bar', path: '/dashboard' },
+      { label: 'nav.expenses', icon: 'pi pi-list', path: '/expenses' },
+      { label: 'nav.payments', icon: 'pi pi-credit-card', path: '/payments' },
+      {
+        label: 'nav.budgets',
+        icon: 'pi pi-gauge',
+        path: '/budgets',
+        badge: overBudget > 0 ? String(overBudget) : undefined,
+      },
+      { label: 'nav.recurring', icon: 'pi pi-sync', path: '/recurring' },
+      { label: 'nav.import', icon: 'pi pi-upload', path: '/import' },
+      { label: 'nav.accounts', icon: 'pi pi-wallet', path: '/accounts' },
+      { label: 'nav.categories', icon: 'pi pi-tags', path: '/categories' },
+      { label: 'nav.concepts', icon: 'pi pi-sitemap', path: '/concepts' },
+    ];
+  });
 
   ngOnInit(): void {
     // Lazy catch-up: generate any recurring expenses due since the last visit.
     this.recurring.generate().subscribe({ error: () => {} });
+    // Over-budget check: toast once after login, badge on the Budgets link.
+    this.budgetAlerts.checkOnLogin();
   }
 
   initials = computed(() => {

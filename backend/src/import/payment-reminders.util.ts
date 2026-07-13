@@ -139,7 +139,11 @@ export function buildReminder(
 }
 
 /** `dueDay` in the given month, clamped to the month's length (31 → Feb 28). */
-function occurrenceIn(year: number, monthIndex0: number, dueDay: number): string {
+function occurrenceIn(
+  year: number,
+  monthIndex0: number,
+  dueDay: number,
+): string {
   const lastDay = new Date(Date.UTC(year, monthIndex0 + 1, 0)).getUTCDate();
   return new Date(Date.UTC(year, monthIndex0, Math.min(dueDay, lastDay)))
     .toISOString()

@@ -78,7 +78,25 @@ describe('BudgetsService', () => {
       expect(budgetsCreate).toHaveBeenCalledWith({
         userId: 'u1',
         categoryId: 'cat-1',
+        month: null,
         amount: 500,
+      });
+    });
+
+    it('targets the month override row, not the standing budget', async () => {
+      await service.upsert('u1', {
+        categoryId: 'cat-1',
+        amount: 800,
+        month: '2026-07',
+      });
+      expect(budgetsFindOne).toHaveBeenCalledWith({
+        where: expect.objectContaining({ month: '2026-07' }) as object,
+      });
+      expect(budgetsCreate).toHaveBeenCalledWith({
+        userId: 'u1',
+        categoryId: 'cat-1',
+        month: '2026-07',
+        amount: 800,
       });
     });
 
@@ -97,6 +115,7 @@ describe('BudgetsService', () => {
       expect(budgetsCreate).toHaveBeenCalledWith({
         userId: 'u1',
         categoryId: null,
+        month: null,
         amount: 3000,
       });
     });
@@ -131,6 +150,9 @@ describe('BudgetsService', () => {
           color: '#f00',
           budgetId: 'b1',
           amount: 500,
+          overrideId: null,
+          overrideAmount: null,
+          effectiveAmount: 500,
           spent: 320.5,
         },
         {
@@ -139,6 +161,9 @@ describe('BudgetsService', () => {
           color: '#0f0',
           budgetId: null,
           amount: null,
+          overrideId: null,
+          overrideAmount: null,
+          effectiveAmount: null,
           spent: 0,
         },
       ]);
@@ -146,6 +171,9 @@ describe('BudgetsService', () => {
       expect(status.overall).toEqual({
         budgetId: null,
         amount: null,
+        overrideId: null,
+        overrideAmount: null,
+        effectiveAmount: null,
         spent: 400.5,
       });
     });
@@ -162,10 +190,44 @@ describe('BudgetsService', () => {
       expect(status.overall).toEqual({
         budgetId: 'b-all',
         amount: 10000,
+        overrideId: null,
+        overrideAmount: null,
+        effectiveAmount: 10000,
         spent: 1234,
       });
       expect(status.unconvertedCount).toBe(3);
       expect(status.baseCurrency).toBe('GTQ');
+    });
+
+    it('applies a month override on top of the standing budget', async () => {
+      categoriesFindAll.mockResolvedValue([
+        { id: 'cat-1', name: 'Food', color: '#f00' },
+      ]);
+      budgetsFind.mockResolvedValue([
+        { id: 'b1', categoryId: 'cat-1', month: null, amount: 500 },
+        { id: 'o1', categoryId: 'cat-1', month: '2026-07', amount: 800 },
+        { id: 'o2', categoryId: 'cat-1', month: '2026-08', amount: 200 },
+        { id: 'o-all', categoryId: null, month: '2026-07', amount: 9000 },
+      ]);
+
+      const status = await service.status('u1', { month: '2026-07' });
+
+      // The viewed month's override wins; other months' overrides are ignored.
+      expect(status.categories[0]).toMatchObject({
+        budgetId: 'b1',
+        amount: 500,
+        overrideId: 'o1',
+        overrideAmount: 800,
+        effectiveAmount: 800,
+      });
+      // An override without a standing budget still sets the effective limit.
+      expect(status.overall).toMatchObject({
+        budgetId: null,
+        amount: null,
+        overrideId: 'o-all',
+        overrideAmount: 9000,
+        effectiveAmount: 9000,
+      });
     });
 
     it('defaults to the current month', async () => {
