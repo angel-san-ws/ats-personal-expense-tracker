@@ -191,6 +191,10 @@ export class UsersService {
     if (dto.currency !== undefined)
       user.currency = dto.currency.trim().toUpperCase();
     if (dto.theme !== undefined) user.theme = dto.theme;
+    if (dto.notifyPaymentDue !== undefined)
+      user.notifyPaymentDue = dto.notifyPaymentDue;
+    if (dto.notifyBudgetOverspend !== undefined)
+      user.notifyBudgetOverspend = dto.notifyBudgetOverspend;
     const saved = await this.users.save(user);
     // Stamped expense rates target the base currency, so a change invalidates
     // them all. Restamp is best-effort — leftovers surface in the dashboard's

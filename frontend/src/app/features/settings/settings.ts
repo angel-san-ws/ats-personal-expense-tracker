@@ -5,6 +5,7 @@ import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { PasswordModule } from 'primeng/password';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
@@ -25,6 +26,7 @@ import { AppLanguage, AppTheme } from '../../core/models';
     InputTextModule,
     SelectModule,
     PasswordModule,
+    ToggleSwitchModule,
     ButtonModule,
     MessageModule,
   ],
@@ -128,6 +130,36 @@ import { AppLanguage, AppTheme } from '../../core/models';
           </p-card>
         </div>
 
+        <!-- Notifications -->
+        <div class="col-12 lg:col-6">
+          <p-card [header]="t('settings.notifications')">
+            <div class="flex flex-column gap-3">
+              <div class="flex align-items-center justify-content-between gap-3">
+                <div class="flex flex-column gap-1">
+                  <label>{{ t('settings.notifyPaymentDue') }}</label>
+                  <small class="text-color-secondary">{{ t('settings.notifyPaymentDueHint') }}</small>
+                </div>
+                <p-toggleswitch [(ngModel)]="notifyPaymentDue" />
+              </div>
+              <div class="flex align-items-center justify-content-between gap-3">
+                <div class="flex flex-column gap-1">
+                  <label>{{ t('settings.notifyBudgetOverspend') }}</label>
+                  <small class="text-color-secondary">{{ t('settings.notifyBudgetOverspendHint') }}</small>
+                </div>
+                <p-toggleswitch [(ngModel)]="notifyBudgetOverspend" />
+              </div>
+              <div>
+                <p-button
+                  [label]="t('settings.saveNotifications')"
+                  icon="pi pi-save"
+                  [loading]="savingNotifications()"
+                  (onClick)="saveNotifications()"
+                />
+              </div>
+            </div>
+          </p-card>
+        </div>
+
         <!-- Security -->
         <div class="col-12 lg:col-6">
           <p-card [header]="t('settings.security')">
@@ -188,6 +220,8 @@ export class SettingsComponent implements OnInit {
   language: AppLanguage = 'en';
   currency = 'GTQ';
   theme: AppTheme = 'light';
+  notifyPaymentDue = false;
+  notifyBudgetOverspend = false;
   currentPassword = '';
   newPassword = '';
   confirmPassword = '';
@@ -196,6 +230,7 @@ export class SettingsComponent implements OnInit {
 
   savingProfile = signal(false);
   savingPrefs = signal(false);
+  savingNotifications = signal(false);
   savingPassword = signal(false);
 
   currencyOptions = [
@@ -223,6 +258,8 @@ export class SettingsComponent implements OnInit {
       this.language = user.language;
       this.currency = user.currency;
       this.theme = user.theme;
+      this.notifyPaymentDue = user.notifyPaymentDue;
+      this.notifyBudgetOverspend = user.notifyBudgetOverspend;
     }
   }
 
@@ -277,6 +314,26 @@ export class SettingsComponent implements OnInit {
           });
         },
         error: () => this.savingPrefs.set(false),
+      });
+  }
+
+  saveNotifications(): void {
+    this.savingNotifications.set(true);
+    this.users
+      .updateSettings({
+        notifyPaymentDue: this.notifyPaymentDue,
+        notifyBudgetOverspend: this.notifyBudgetOverspend,
+      })
+      .subscribe({
+        next: (user) => {
+          this.auth.setUser(user);
+          this.savingNotifications.set(false);
+          this.messages.add({
+            severity: 'success',
+            summary: this.transloco.translate('settings.notificationsSaved'),
+          });
+        },
+        error: () => this.savingNotifications.set(false),
       });
   }
 

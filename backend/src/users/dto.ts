@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsIn,
   IsOptional,
   IsString,
@@ -37,6 +38,14 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsIn(['light', 'dark'])
   theme?: 'light' | 'dark';
+
+  @IsOptional()
+  @IsBoolean()
+  notifyPaymentDue?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  notifyBudgetOverspend?: boolean;
 }
 
 export class SavedFilterDto {

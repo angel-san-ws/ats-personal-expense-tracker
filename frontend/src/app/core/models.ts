@@ -25,6 +25,8 @@ export interface User {
   language: AppLanguage;
   currency: string;
   theme: AppTheme;
+  notifyPaymentDue: boolean;
+  notifyBudgetOverspend: boolean;
   savedFilters: Record<string, SavedFilterState>;
   createdAt: string;
 }

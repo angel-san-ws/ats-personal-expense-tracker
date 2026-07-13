@@ -9,6 +9,8 @@ export interface PublicUser {
   language: 'en' | 'es';
   currency: string;
   theme: 'light' | 'dark';
+  notifyPaymentDue: boolean;
+  notifyBudgetOverspend: boolean;
   savedFilters: Record<string, SavedFilter>;
   createdAt: Date;
 }
@@ -23,6 +25,8 @@ export function toPublicUser(user: User): PublicUser {
     language: user.language,
     currency: user.currency,
     theme: user.theme,
+    notifyPaymentDue: user.notifyPaymentDue,
+    notifyBudgetOverspend: user.notifyBudgetOverspend,
     savedFilters: user.savedFilters ?? {},
     createdAt: user.createdAt,
   };

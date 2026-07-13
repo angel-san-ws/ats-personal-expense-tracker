@@ -95,6 +95,14 @@ export class User {
   @Column({ type: 'varchar', length: 8, default: 'light' })
   theme: AppTheme;
 
+  /** Opt-in: email when a card payment is due in 3 days or fewer. */
+  @Column({ name: 'notify_payment_due', type: 'boolean', default: false })
+  notifyPaymentDue: boolean;
+
+  /** Opt-in: email when a category or the overall budget exceeds its monthly limit. */
+  @Column({ name: 'notify_budget_overspend', type: 'boolean', default: false })
+  notifyBudgetOverspend: boolean;
+
   @Column({ name: 'saved_filters', type: 'jsonb', default: () => "'{}'" })
   savedFilters: Record<string, SavedFilter>;
 

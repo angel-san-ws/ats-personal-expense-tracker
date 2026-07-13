@@ -19,6 +19,8 @@ export class UsersService {
     language?: AppLanguage;
     currency?: string;
     theme?: AppTheme;
+    notifyPaymentDue?: boolean;
+    notifyBudgetOverspend?: boolean;
   }): Observable<User> {
     return this.http.patch<User>(`${API_BASE}/users/me/settings`, settings);
   }

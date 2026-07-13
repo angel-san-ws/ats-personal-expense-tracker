@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Account } from './accounts/account.entity';
@@ -12,6 +13,7 @@ import { Expense } from './expenses/expense.entity';
 import { ImportBatch } from './import/import-batch.entity';
 import { RecurringExpense } from './recurring/recurring-expense.entity';
 import { ExchangeRate } from './rates/exchange-rate.entity';
+import { SentNotification } from './notifications/sent-notification.entity';
 
 import { AccountsModule } from './accounts/accounts.module';
 import { AuthModule } from './auth/auth.module';
@@ -23,10 +25,12 @@ import { ExpensesModule } from './expenses/expenses.module';
 import { ImportModule } from './import/import.module';
 import { RecurringExpensesModule } from './recurring/recurring-expenses.module';
 import { RatesModule } from './rates/rates.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -56,6 +60,7 @@ import { RatesModule } from './rates/rates.module';
           ImportBatch,
           RecurringExpense,
           ExchangeRate,
+          SentNotification,
         ],
         // Auto-create schema for local dev. Use migrations in production.
         synchronize: true,
@@ -73,6 +78,7 @@ import { RatesModule } from './rates/rates.module';
     ImportModule,
     RecurringExpensesModule,
     RatesModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

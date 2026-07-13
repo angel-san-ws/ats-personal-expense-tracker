@@ -157,7 +157,15 @@ import { Account, AccountType } from '../../core/models';
 
           <div class="flex flex-column gap-1">
             <label>{{ t('accounts.institution') }}</label>
-            <input pInputText [(ngModel)]="form.institution" class="w-full" />
+            <p-select
+              [(ngModel)]="form.institution"
+              [options]="bankOptions"
+              [editable]="true"
+              [showClear]="true"
+              appendTo="body"
+              styleClass="w-full"
+              [placeholder]="t('accounts.institutionPlaceholder')"
+            />
           </div>
 
           <div class="flex flex-column gap-1">
@@ -240,11 +248,29 @@ export class AccountsComponent implements OnInit {
   dialogVisible = false;
   editing = signal<Account | null>(null);
 
+  /** Banks supervised by the SIB (Guatemala); the field stays free-text via [editable]. */
+  readonly bankOptions = [
+    'BAC Credomatic',
+    'Banco Agromercantil (BAM)',
+    'Banco CHN (Crédito Hipotecario Nacional)',
+    'Banco de Antigua',
+    'Banco de los Trabajadores (Bantrab)',
+    'Banco Ficohsa',
+    'Banco G&T Continental',
+    'Banco Industrial',
+    'Banco INV',
+    'Banco Internacional (Interbanco)',
+    'Banco Promerica',
+    'Banrural (Banco de Desarrollo Rural)',
+    'Citibank N.A. Sucursal Guatemala',
+    'Vivibanco',
+  ];
+
   form: {
     name: string;
     type: AccountType;
     lastFour: string;
-    institution: string;
+    institution: string | null;
     creditLimit: number | null;
     paymentDueDay: number | null;
     paymentAmount: number | null;
@@ -303,7 +329,7 @@ export class AccountsComponent implements OnInit {
       name,
       type: this.form.type,
       lastFour: this.form.lastFour.trim(),
-      institution: this.form.institution.trim(),
+      institution: (this.form.institution ?? '').trim(),
       color: this.colorValue(),
       creditLimit: this.form.creditLimit ?? undefined,
       // null (not undefined) so clearing the field turns the reminder off.

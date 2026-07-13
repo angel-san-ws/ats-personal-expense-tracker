@@ -44,5 +44,6 @@ import { RatesModule } from '../rates/rates.module';
     },
   ],
   controllers: [ImportController],
+  exports: [PaymentRemindersService],
 })
 export class ImportModule {}
