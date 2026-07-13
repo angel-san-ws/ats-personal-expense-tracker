@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ImportService } from './import.service';
+import { PaymentRemindersService } from './payment-reminders.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthUser } from '../auth/current-user.decorator';
@@ -21,7 +22,10 @@ import type { AuthUser } from '../auth/current-user.decorator';
 @UseGuards(JwtAuthGuard)
 @Controller('import')
 export class ImportController {
-  constructor(private readonly importService: ImportService) {}
+  constructor(
+    private readonly importService: ImportService,
+    private readonly paymentReminders: PaymentRemindersService,
+  ) {}
 
   @Post('excel')
   @UseInterceptors(
@@ -86,6 +90,12 @@ export class ImportController {
   @Get('batches')
   batches(@CurrentUser() user: AuthUser) {
     return this.importService.listBatches(user.userId);
+  }
+
+  /** Due-date reminders derived from each account's latest statement. */
+  @Get('payment-reminders')
+  paymentRemindersList(@CurrentUser() user: AuthUser) {
+    return this.paymentReminders.list(user.userId);
   }
 
   @Delete('batches/:id')

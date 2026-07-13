@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE } from '../api.config';
-import { ImportBatch, ImportResult } from '../models';
+import { ImportBatch, ImportResult, PaymentReminder } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ImportService {
@@ -25,6 +25,12 @@ export class ImportService {
     }
     form.append('suggestCategories', String(suggestCategories));
     return this.http.post<ImportResult>(`${API_BASE}/import/screenshot`, form);
+  }
+
+  paymentReminders(): Observable<PaymentReminder[]> {
+    return this.http.get<PaymentReminder[]>(
+      `${API_BASE}/import/payment-reminders`,
+    );
   }
 
   batches(): Observable<ImportBatch[]> {

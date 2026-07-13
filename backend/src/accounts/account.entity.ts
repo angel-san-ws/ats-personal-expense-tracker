@@ -90,6 +90,25 @@ export class Account {
   })
   creditLimit: number | null;
 
+  /**
+   * Day of the month (1–31, clamped to shorter months) the card's payment is
+   * due. Set by the user to get a monthly due-date reminder even without
+   * importing statements; a statement-derived due date takes precedence.
+   */
+  @Column({ name: 'payment_due_day', type: 'int', nullable: true })
+  paymentDueDay: number | null;
+
+  /** Expected/typical payment amount shown on manual reminders. */
+  @Column({
+    name: 'payment_amount',
+    type: 'numeric',
+    precision: 14,
+    scale: 2,
+    nullable: true,
+    transformer: decimalTransformer,
+  })
+  paymentAmount: number | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

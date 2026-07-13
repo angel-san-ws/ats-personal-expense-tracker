@@ -94,7 +94,19 @@
     "unconverted": "{{count}} gasto(s) en otras monedas están pendientes de conversión y no se incluyen en los totales.",
     "updateRates": "Actualizar tipos de cambio",
     "budgets": "Presupuestos",
-    "manageBudgets": "Administrar presupuestos"
+    "manageBudgets": "Administrar presupuestos",
+    "reminder": {
+      "title": "Próximos pagos de tarjeta",
+      "paid": "Pagado",
+      "overdue": "Vencido hace {{days}} día(s)",
+      "dueToday": "Vence hoy",
+      "dueIn": "Vence en {{days}} día(s)",
+      "dueDate": "Fecha límite",
+      "minPayment": "Pago mínimo",
+      "expectedPayment": "Esperado",
+      "paidAmount": "Pagado",
+      "viewPayments": "Pagos"
+    }
   },
   "filters": {
     "title": "Filtros",
@@ -233,6 +245,10 @@
     "lastFour": "Últimos dígitos",
     "institution": "Banco / emisor",
     "creditLimit": "Límite de crédito",
+    "paymentDueDay": "Día límite de pago",
+    "paymentAmount": "Pago esperado",
+    "paymentDueDayHint": "Día del mes en que vence el pago de la tarjeta (p. ej. 20). Agrega un recordatorio mensual al tablero; al importar un estado de cuenta, la fecha exacta tiene prioridad.",
+    "dueDayValue": "Día {{day}}",
     "color": "Color",
     "status": "Estado",
     "actions": "Acciones",

@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ImportBatch } from './import-batch.entity';
 import { Expense } from '../expenses/expense.entity';
 import { ImportService } from './import.service';
+import { PaymentRemindersService } from './payment-reminders.service';
 import { ImportController } from './import.controller';
 import { ALERT_IMAGE_PARSER, AlertImageParser } from './alert-image-parser';
 import { OcrAlertImageParser } from './ocr-alert-image-parser';
@@ -22,6 +23,7 @@ import { RatesModule } from '../rates/rates.module';
   ],
   providers: [
     ImportService,
+    PaymentRemindersService,
     OcrAlertImageParser,
     {
       // Screenshot-understanding strategy. Only "ocr" exists today; a future

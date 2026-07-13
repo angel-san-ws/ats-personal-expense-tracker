@@ -2,12 +2,16 @@ import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsIn,
+  IsInt,
   IsNumber,
   IsOptional,
   IsPositive,
   IsString,
+  Max,
   MaxLength,
+  Min,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 import { ACCOUNT_TYPES } from './account.entity';
 
@@ -41,6 +45,21 @@ export class CreateAccountDto {
   @IsPositive()
   @Type(() => Number)
   creditLimit?: number;
+
+  /** Day of month (1–31) the payment is due; enables manual reminders. */
+  @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
+  @IsInt()
+  @Min(1)
+  @Max(31)
+  paymentDueDay?: number | null;
+
+  /** Expected payment amount shown on manual reminders. */
+  @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsPositive()
+  paymentAmount?: number | null;
 }
 
 export class UpdateAccountDto {
@@ -81,4 +100,19 @@ export class UpdateAccountDto {
   @IsPositive()
   @Type(() => Number)
   creditLimit?: number;
+
+  /** Day of month (1–31); null clears it and stops manual reminders. */
+  @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
+  @IsInt()
+  @Min(1)
+  @Max(31)
+  paymentDueDay?: number | null;
+
+  /** Expected payment amount; null clears it. */
+  @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsPositive()
+  paymentAmount?: number | null;
 }

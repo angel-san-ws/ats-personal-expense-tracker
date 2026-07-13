@@ -73,6 +73,10 @@ export interface Account {
   color: string | null;
   archived: boolean;
   creditLimit: number | null;
+  /** Day of month (1–31) the payment is due; drives manual reminders. */
+  paymentDueDay: number | null;
+  /** Expected payment amount shown on manual reminders. */
+  paymentAmount: number | null;
   createdAt: string;
 }
 
@@ -84,6 +88,10 @@ export interface AccountInput {
   color?: string;
   archived?: boolean;
   creditLimit?: number;
+  /** Day of month (1–31); null clears it and stops manual reminders. */
+  paymentDueDay?: number | null;
+  /** Expected payment amount; null clears it. */
+  paymentAmount?: number | null;
 }
 
 export type ExpenseKind = 'expense' | 'payment';
@@ -288,6 +296,31 @@ export interface BudgetStatus {
   unconvertedCount: number;
   overall: { budgetId: string | null; amount: number | null; spent: number };
   categories: BudgetCategoryStatus[];
+}
+
+export type PaymentReminderStatus = 'upcoming' | 'dueSoon' | 'overdue' | 'paid';
+
+/**
+ * Due-date reminder for one account, derived from its latest imported
+ * statement. `paid` means a payment was registered after the statement cut.
+ */
+export interface PaymentReminder {
+  accountId: string;
+  accountName: string;
+  accountColor: string | null;
+  lastFour: string | null;
+  dueDate: string;
+  statementDate: string | null;
+  minimumPayment: number | null;
+  pastDueBalance: number | null;
+  /** Negative once the due date has passed. */
+  daysUntilDue: number;
+  status: PaymentReminderStatus;
+  /** 'statement' = exact date from an import; 'manual' = account's due day. */
+  source: 'statement' | 'manual';
+  paidDate: string | null;
+  paidAmount: number | null;
+  paidCurrency: string | null;
 }
 
 export interface ImportBatch {

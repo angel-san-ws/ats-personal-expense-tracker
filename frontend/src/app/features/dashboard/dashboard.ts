@@ -6,13 +6,20 @@ import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
 import { MessageModule } from 'primeng/message';
 import { ButtonModule } from 'primeng/button';
+import { TagModule } from 'primeng/tag';
 
 import { FilterBarComponent } from '../shared/filter-bar';
 import { AtsCurrencyPipe } from '../../core/currency.pipe';
 import { ExpensesService } from '../../core/services/expenses.service';
 import { BudgetsService } from '../../core/services/budgets.service';
+import { ImportService } from '../../core/services/import.service';
 import { ThemeService } from '../../core/theme.service';
-import { BudgetStatus, DashboardSummary, ExpenseQuery } from '../../core/models';
+import {
+  BudgetStatus,
+  DashboardSummary,
+  ExpenseQuery,
+  PaymentReminder,
+} from '../../core/models';
 
 @Component({
   selector: 'app-dashboard',
@@ -22,6 +29,7 @@ import { BudgetStatus, DashboardSummary, ExpenseQuery } from '../../core/models'
     ChartModule,
     MessageModule,
     ButtonModule,
+    TagModule,
     FilterBarComponent,
     AtsCurrencyPipe,
   ],
@@ -37,6 +45,62 @@ import { BudgetStatus, DashboardSummary, ExpenseQuery } from '../../core/models'
         [collapsible]="true"
         (filtersChange)="onFilters($event)"
       />
+
+      @if (reminders().length > 0) {
+        <p-card styleClass="mb-3">
+          <div class="font-medium mb-2">{{ t('dashboard.reminder.title') }}</div>
+          <div class="flex flex-column gap-2">
+            @for (r of reminders(); track r.accountId) {
+              <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+                <span class="flex align-items-center gap-2">
+                  <span class="color-swatch" [style.background]="r.accountColor || 'var(--p-content-border-color)'"></span>
+                  <span class="font-medium">{{ r.accountName }}</span>
+                  @switch (r.status) {
+                    @case ('paid') {
+                      <p-tag severity="success" [value]="t('dashboard.reminder.paid')" />
+                    }
+                    @case ('overdue') {
+                      <p-tag severity="danger" [value]="t('dashboard.reminder.overdue', { days: -r.daysUntilDue })" />
+                    }
+                    @case ('dueSoon') {
+                      <p-tag
+                        severity="warn"
+                        [value]="r.daysUntilDue === 0 ? t('dashboard.reminder.dueToday') : t('dashboard.reminder.dueIn', { days: r.daysUntilDue })"
+                      />
+                    }
+                    @case ('upcoming') {
+                      <p-tag severity="info" [value]="t('dashboard.reminder.dueIn', { days: r.daysUntilDue })" />
+                    }
+                  }
+                </span>
+                <span class="flex align-items-center gap-3 flex-wrap">
+                  <span class="text-sm text-color-secondary">
+                    {{ t('dashboard.reminder.dueDate') }}: {{ r.dueDate }}
+                  </span>
+                  @if (r.status === 'paid' && r.paidAmount !== null) {
+                    <span class="text-sm">
+                      {{ t('dashboard.reminder.paidAmount') }}: {{ r.paidAmount | atsCurrency: r.paidCurrency }}
+                    </span>
+                  } @else if (r.minimumPayment !== null) {
+                    <span class="text-sm">
+                      {{ t(r.source === 'manual' ? 'dashboard.reminder.expectedPayment' : 'dashboard.reminder.minPayment') }}:
+                      {{ r.minimumPayment | atsCurrency }}
+                    </span>
+                  }
+                  <p-button
+                    size="small"
+                    [text]="true"
+                    icon="pi pi-arrow-right"
+                    iconPos="right"
+                    [label]="t('dashboard.reminder.viewPayments')"
+                    (onClick)="goToPayments(r.accountId)"
+                  />
+                </span>
+              </div>
+            }
+          </div>
+        </p-card>
+      }
 
       @if (summary(); as s) {
         @if (s.unconvertedCount > 0) {
@@ -216,6 +280,7 @@ import { BudgetStatus, DashboardSummary, ExpenseQuery } from '../../core/models'
 export class DashboardComponent {
   private expenses = inject(ExpensesService);
   private budgets = inject(BudgetsService);
+  private imports = inject(ImportService);
   private transloco = inject(TranslocoService);
   private router = inject(Router);
   private theme = inject(ThemeService);
@@ -223,7 +288,13 @@ export class DashboardComponent {
   private query = signal<ExpenseQuery>({});
   summary = signal<DashboardSummary | null>(null);
   budgetStatus = signal<BudgetStatus | null>(null);
+  /** Payment due-date reminders; independent of the dashboard filters. */
+  reminders = signal<PaymentReminder[]>([]);
   refreshingRates = signal(false);
+
+  constructor() {
+    this.imports.paymentReminders().subscribe((r) => this.reminders.set(r));
+  }
 
   hasBudgets = computed(() => {
     const b = this.budgetStatus();
@@ -525,6 +596,11 @@ export class DashboardComponent {
 
   goToBudgets(): void {
     this.router.navigate(['/budgets']);
+  }
+
+  /** Open the payments list filtered by the reminder's account. */
+  goToPayments(accountId: string): void {
+    this.router.navigate(['/payments'], { queryParams: { account: accountId } });
   }
 
   cappedPct(pct: number): number {

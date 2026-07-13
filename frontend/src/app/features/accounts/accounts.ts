@@ -58,6 +58,7 @@ import { Account, AccountType } from '../../core/models';
               <th>{{ t('accounts.lastFour') }}</th>
               <th>{{ t('accounts.institution') }}</th>
               <th class="text-right">{{ t('accounts.creditLimit') }}</th>
+              <th class="text-center">{{ t('accounts.paymentDueDay') }}</th>
               <th>{{ t('accounts.status') }}</th>
               <th style="width: 10rem" class="text-right">{{ t('accounts.actions') }}</th>
             </tr>
@@ -79,6 +80,15 @@ import { Account, AccountType } from '../../core/models';
               <td>{{ a.institution || '—' }}</td>
               <td class="text-right">
                 {{ a.creditLimit !== null ? (a.creditLimit | atsCurrency) : '—' }}
+              </td>
+              <td class="text-center">
+                @if (a.paymentDueDay !== null) {
+                  <span [pTooltip]="t('accounts.paymentDueDayHint')">
+                    {{ t('accounts.dueDayValue', { day: a.paymentDueDay }) }}
+                  </span>
+                } @else {
+                  —
+                }
               </td>
               <td>
                 <p-tag
@@ -107,7 +117,7 @@ import { Account, AccountType } from '../../core/models';
           </ng-template>
           <ng-template #emptymessage>
             <tr>
-              <td colspan="7" class="text-center p-4 text-color-secondary">
+              <td colspan="8" class="text-center p-4 text-color-secondary">
                 {{ t('accounts.empty') }}
               </td>
             </tr>
@@ -163,6 +173,33 @@ import { Account, AccountType } from '../../core/models';
             />
           </div>
 
+          <div class="flex gap-2">
+            <div class="flex flex-column gap-1" style="width: 10rem">
+              <label>{{ t('accounts.paymentDueDay') }}</label>
+              <p-inputnumber
+                [(ngModel)]="form.paymentDueDay"
+                [min]="1"
+                [max]="31"
+                [showButtons]="true"
+                styleClass="w-full"
+                inputStyleClass="w-full"
+              />
+            </div>
+            <div class="flex flex-column gap-1 flex-1">
+              <label>{{ t('accounts.paymentAmount') }}</label>
+              <p-inputnumber
+                [(ngModel)]="form.paymentAmount"
+                mode="decimal"
+                [minFractionDigits]="2"
+                [maxFractionDigits]="2"
+                [min]="0"
+                styleClass="w-full"
+                inputStyleClass="w-full"
+              />
+            </div>
+          </div>
+          <small class="text-color-secondary">{{ t('accounts.paymentDueDayHint') }}</small>
+
           <div class="flex flex-column gap-1">
             <label>{{ t('accounts.color') }}</label>
             <div class="flex align-items-center gap-2">
@@ -209,6 +246,8 @@ export class AccountsComponent implements OnInit {
     lastFour: string;
     institution: string;
     creditLimit: number | null;
+    paymentDueDay: number | null;
+    paymentAmount: number | null;
     color: string;
   } = this.emptyForm();
 
@@ -250,6 +289,8 @@ export class AccountsComponent implements OnInit {
       lastFour: a.lastFour ?? '',
       institution: a.institution ?? '',
       creditLimit: a.creditLimit,
+      paymentDueDay: a.paymentDueDay,
+      paymentAmount: a.paymentAmount,
       color: (a.color ?? '').replace('#', ''),
     };
     this.dialogVisible = true;
@@ -265,6 +306,9 @@ export class AccountsComponent implements OnInit {
       institution: this.form.institution.trim(),
       color: this.colorValue(),
       creditLimit: this.form.creditLimit ?? undefined,
+      // null (not undefined) so clearing the field turns the reminder off.
+      paymentDueDay: this.form.paymentDueDay,
+      paymentAmount: this.form.paymentAmount,
     };
     const current = this.editing();
     const req = current
@@ -342,6 +386,8 @@ export class AccountsComponent implements OnInit {
       lastFour: '',
       institution: '',
       creditLimit: null,
+      paymentDueDay: null,
+      paymentAmount: null,
       color: '',
     };
   }
