@@ -53,13 +53,6 @@ export class CreateAccountDto {
   @Min(1)
   @Max(31)
   paymentDueDay?: number | null;
-
-  /** Expected payment amount shown on manual reminders. */
-  @IsOptional()
-  @ValidateIf((_o, v) => v !== null)
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @IsPositive()
-  paymentAmount?: number | null;
 }
 
 export class UpdateAccountDto {
@@ -108,11 +101,4 @@ export class UpdateAccountDto {
   @Min(1)
   @Max(31)
   paymentDueDay?: number | null;
-
-  /** Expected payment amount; null clears it. */
-  @IsOptional()
-  @ValidateIf((_o, v) => v !== null)
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @IsPositive()
-  paymentAmount?: number | null;
 }

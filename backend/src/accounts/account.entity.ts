@@ -98,17 +98,6 @@ export class Account {
   @Column({ name: 'payment_due_day', type: 'int', nullable: true })
   paymentDueDay: number | null;
 
-  /** Expected/typical payment amount shown on manual reminders. */
-  @Column({
-    name: 'payment_amount',
-    type: 'numeric',
-    precision: 14,
-    scale: 2,
-    nullable: true,
-    transformer: decimalTransformer,
-  })
-  paymentAmount: number | null;
-
   /**
    * Payment reminders with a due date on or before this date are dismissed
    * (hidden). Set to the reminder's due date when the user dismisses it, so

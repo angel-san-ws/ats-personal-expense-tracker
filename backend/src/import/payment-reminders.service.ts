@@ -97,7 +97,6 @@ export class PaymentRemindersService {
           accountName: a.name,
           accountColor: a.color,
           lastFour: a.lastFour,
-          minimumPayment: a.paymentAmount,
           pastDueBalance: null,
           dueDay: a.paymentDueDay!,
           payments: paymentsByAccount.get(a.id) ?? [],

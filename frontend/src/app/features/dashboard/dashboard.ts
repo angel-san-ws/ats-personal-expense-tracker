@@ -84,7 +84,7 @@ import {
                     </span>
                   } @else if (r.minimumPayment !== null) {
                     <span class="text-sm">
-                      {{ t(r.source === 'manual' ? 'dashboard.reminder.expectedPayment' : 'dashboard.reminder.minPayment') }}:
+                      {{ t('dashboard.reminder.minPayment') }}:
                       {{ r.minimumPayment | atsCurrency }}
                     </span>
                   }

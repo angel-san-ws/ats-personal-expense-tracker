@@ -104,7 +104,6 @@
       "dueIn": "Vence en {{days}} día(s)",
       "dueDate": "Fecha límite",
       "minPayment": "Pago mínimo",
-      "expectedPayment": "Esperado",
       "paidAmount": "Pagado",
       "viewPayments": "Pagos",
       "dismiss": "Descartar recordatorio"
@@ -266,7 +265,6 @@
     "institutionPlaceholder": "Selecciona o escribe un banco",
     "creditLimit": "Límite de crédito",
     "paymentDueDay": "Día límite de pago",
-    "paymentAmount": "Pago esperado",
     "paymentDueDayHint": "Día del mes en que vence el pago de la tarjeta (p. ej. 20). Agrega un recordatorio mensual al tablero; al importar un estado de cuenta, la fecha exacta tiene prioridad.",
     "dueDayValue": "Día {{day}}",
     "color": "Color",

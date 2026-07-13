@@ -59,7 +59,6 @@ export class AccountsService {
         color: dto.color?.trim() || null,
         creditLimit: dto.creditLimit ?? null,
         paymentDueDay: dto.paymentDueDay ?? null,
-        paymentAmount: dto.paymentAmount ?? null,
       }),
     );
   }
@@ -87,9 +86,6 @@ export class AccountsService {
     if (dto.creditLimit !== undefined) account.creditLimit = dto.creditLimit;
     if (dto.paymentDueDay !== undefined) {
       account.paymentDueDay = dto.paymentDueDay;
-    }
-    if (dto.paymentAmount !== undefined) {
-      account.paymentAmount = dto.paymentAmount;
     }
     return this.accounts.save(account);
   }

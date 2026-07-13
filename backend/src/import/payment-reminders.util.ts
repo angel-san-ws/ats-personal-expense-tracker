@@ -171,7 +171,7 @@ export function monthlyDueDates(
 /** Manual reminder input: a monthly due day instead of statement dates. */
 export type ManualReminderSource = Omit<
   ReminderSource,
-  'dueDate' | 'statementDate' | 'source'
+  'dueDate' | 'statementDate' | 'source' | 'minimumPayment'
 > & { dueDay: number };
 
 /**
@@ -191,6 +191,7 @@ export function buildManualReminder(
     ...src,
     dueDate,
     statementDate,
+    minimumPayment: null,
     source: 'manual',
   });
   return (

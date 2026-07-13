@@ -77,8 +77,6 @@ export interface Account {
   creditLimit: number | null;
   /** Day of month (1–31) the payment is due; drives manual reminders. */
   paymentDueDay: number | null;
-  /** Expected payment amount shown on manual reminders. */
-  paymentAmount: number | null;
   /** Payment reminders due on or before this date are dismissed (hidden). */
   reminderDismissedThrough: string | null;
   createdAt: string;
@@ -94,8 +92,6 @@ export interface AccountInput {
   creditLimit?: number;
   /** Day of month (1–31); null clears it and stops manual reminders. */
   paymentDueDay?: number | null;
-  /** Expected payment amount; null clears it. */
-  paymentAmount?: number | null;
 }
 
 export type ExpenseKind = 'expense' | 'payment';

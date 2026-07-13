@@ -104,7 +104,6 @@
       "dueIn": "Due in {{days}} day(s)",
       "dueDate": "Due date",
       "minPayment": "Min. payment",
-      "expectedPayment": "Expected",
       "paidAmount": "Paid",
       "viewPayments": "Payments",
       "dismiss": "Dismiss reminder"
@@ -266,7 +265,6 @@
     "institutionPlaceholder": "Select or type a bank",
     "creditLimit": "Credit limit",
     "paymentDueDay": "Payment due day",
-    "paymentAmount": "Expected payment",
     "paymentDueDayHint": "Day of the month the card payment is due (e.g. 20). Adds a monthly reminder to the dashboard; a statement import with the exact date takes precedence.",
     "dueDayValue": "Day {{day}}",
     "color": "Color",

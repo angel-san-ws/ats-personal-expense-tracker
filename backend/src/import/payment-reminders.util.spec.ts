@@ -188,7 +188,6 @@ describe('buildManualReminder', () => {
       accountName: 'BI Visa 1234',
       accountColor: '#6366f1',
       lastFour: '1234',
-      minimumPayment: 850.5,
       pastDueBalance: null,
       dueDay: 20,
       payments: [],

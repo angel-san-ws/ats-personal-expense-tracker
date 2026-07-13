@@ -181,30 +181,16 @@ import { Account, AccountType } from '../../core/models';
             />
           </div>
 
-          <div class="flex gap-2">
-            <div class="flex flex-column gap-1" style="width: 10rem">
-              <label>{{ t('accounts.paymentDueDay') }}</label>
-              <p-inputnumber
-                [(ngModel)]="form.paymentDueDay"
-                [min]="1"
-                [max]="31"
-                [showButtons]="true"
-                styleClass="w-full"
-                inputStyleClass="w-full"
-              />
-            </div>
-            <div class="flex flex-column gap-1 flex-1">
-              <label>{{ t('accounts.paymentAmount') }}</label>
-              <p-inputnumber
-                [(ngModel)]="form.paymentAmount"
-                mode="decimal"
-                [minFractionDigits]="2"
-                [maxFractionDigits]="2"
-                [min]="0"
-                styleClass="w-full"
-                inputStyleClass="w-full"
-              />
-            </div>
+          <div class="flex flex-column gap-1" style="width: 10rem">
+            <label>{{ t('accounts.paymentDueDay') }}</label>
+            <p-inputnumber
+              [(ngModel)]="form.paymentDueDay"
+              [min]="1"
+              [max]="31"
+              [showButtons]="true"
+              styleClass="w-full"
+              inputStyleClass="w-full"
+            />
           </div>
           <small class="text-color-secondary">{{ t('accounts.paymentDueDayHint') }}</small>
 
@@ -273,7 +259,6 @@ export class AccountsComponent implements OnInit {
     institution: string | null;
     creditLimit: number | null;
     paymentDueDay: number | null;
-    paymentAmount: number | null;
     color: string;
   } = this.emptyForm();
 
@@ -316,7 +301,6 @@ export class AccountsComponent implements OnInit {
       institution: a.institution ?? '',
       creditLimit: a.creditLimit,
       paymentDueDay: a.paymentDueDay,
-      paymentAmount: a.paymentAmount,
       color: (a.color ?? '').replace('#', ''),
     };
     this.dialogVisible = true;
@@ -334,7 +318,6 @@ export class AccountsComponent implements OnInit {
       creditLimit: this.form.creditLimit ?? undefined,
       // null (not undefined) so clearing the field turns the reminder off.
       paymentDueDay: this.form.paymentDueDay,
-      paymentAmount: this.form.paymentAmount,
     };
     const current = this.editing();
     const req = current
@@ -413,7 +396,6 @@ export class AccountsComponent implements OnInit {
       institution: '',
       creditLimit: null,
       paymentDueDay: null,
-      paymentAmount: null,
       color: '',
     };
   }
