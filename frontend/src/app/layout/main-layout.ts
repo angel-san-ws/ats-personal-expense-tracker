@@ -219,6 +219,7 @@ export class MainLayoutComponent implements OnInit {
     const overBudget = this.budgetAlerts.overCount();
     return [
       { label: 'nav.dashboard', icon: 'pi pi-chart-bar', path: '/dashboard' },
+      { label: 'nav.reports', icon: 'pi pi-chart-line', path: '/reports' },
       { label: 'nav.expenses', icon: 'pi pi-list', path: '/expenses' },
       { label: 'nav.payments', icon: 'pi pi-credit-card', path: '/payments' },
       {

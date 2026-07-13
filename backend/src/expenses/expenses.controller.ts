@@ -10,12 +10,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
+import { ReportService } from './report.service';
 import {
   BatchAssignCategoryDto,
   BatchDeleteExpensesDto,
   BatchUpdateExpensesDto,
   CreateExpenseDto,
   QueryExpensesDto,
+  ReportQueryDto,
   SetExcludedDto,
   UpdateExpenseDto,
 } from './dto';
@@ -26,7 +28,10 @@ import type { AuthUser } from '../auth/current-user.decorator';
 @UseGuards(JwtAuthGuard)
 @Controller('expenses')
 export class ExpensesController {
-  constructor(private readonly expenses: ExpensesService) {}
+  constructor(
+    private readonly expenses: ExpensesService,
+    private readonly reports: ReportService,
+  ) {}
 
   @Get()
   findAll(@CurrentUser() user: AuthUser, @Query() query: QueryExpensesDto) {
@@ -36,6 +41,11 @@ export class ExpensesController {
   @Get('summary')
   summary(@CurrentUser() user: AuthUser, @Query() query: QueryExpensesDto) {
     return this.expenses.summary(user.userId, query);
+  }
+
+  @Get('report')
+  report(@CurrentUser() user: AuthUser, @Query() query: ReportQueryDto) {
+    return this.reports.yearReport(user.userId, query);
   }
 
   @Get('field-options')

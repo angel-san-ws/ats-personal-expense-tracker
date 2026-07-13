@@ -312,6 +312,44 @@ export interface BudgetStatus {
   categories: BudgetCategoryStatus[];
 }
 
+export interface YearReportMonth {
+  /** YYYY-MM */
+  month: string;
+  /** Spend for the month, converted to the base currency. */
+  total: number;
+  count: number;
+  /** Converted spend for the same calendar month of the previous year. */
+  prevTotal: number;
+  /** Effective budget limit for the month; null when no budget applies. */
+  budget: number | null;
+}
+
+export interface YearReportCategory {
+  categoryId: string | null;
+  categoryName: string;
+  color: string;
+  /** Converted total per month; index 0 = January. */
+  monthlyTotals: number[];
+  total: number;
+}
+
+/** Yearly trends: monthly totals, per-category series, budget vs. actual. */
+export interface YearReport {
+  year: number;
+  /** User's base currency — every converted figure below is in it. */
+  baseCurrency: string;
+  /** Always 12 entries, January through December. */
+  months: YearReportMonth[];
+  /** Ordered by year total, descending. */
+  byCategory: YearReportCategory[];
+  yearTotal: number;
+  prevYearTotal: number;
+  /** Year total averaged over the months that have any spend. */
+  monthlyAverage: number;
+  /** Foreign-currency rows without a rate, excluded from converted totals. */
+  unconvertedCount: number;
+}
+
 export type PaymentReminderStatus = 'upcoming' | 'dueSoon' | 'overdue' | 'paid';
 
 /**

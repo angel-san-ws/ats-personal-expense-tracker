@@ -4,6 +4,7 @@
   },
   "nav": {
     "dashboard": "Tablero",
+    "reports": "Reportes",
     "expenses": "Gastos",
     "payments": "Pagos",
     "recurring": "Gastos Fijos",
@@ -108,6 +109,23 @@
       "viewPayments": "Pagos",
       "dismiss": "Descartar recordatorio"
     }
+  },
+  "reports": {
+    "title": "Reportes",
+    "prevYear": "Año anterior",
+    "nextYear": "Año siguiente",
+    "yearTotal": "Total del año",
+    "monthlyAverage": "Promedio mensual",
+    "vsLastYear": "vs. año anterior",
+    "vsYear": "vs. {{year}}",
+    "noPrevYear": "No hay gastos registrados en {{year}}",
+    "monthlyTotals": "Gasto mensual vs. año anterior",
+    "categoryTrend": "Gasto por categoría durante el año",
+    "budgetVsActual": "Presupuesto vs. real",
+    "budget": "Presupuesto",
+    "actual": "Real",
+    "noBudgets": "No hay presupuestos que apliquen a este año. Define límites mensuales en la página de Presupuestos.",
+    "noData": "No hay gastos registrados en este año. Importa un estado de cuenta para comenzar."
   },
   "filters": {
     "title": "Filtros",

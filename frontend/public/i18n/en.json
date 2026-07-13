@@ -4,6 +4,7 @@
   },
   "nav": {
     "dashboard": "Dashboard",
+    "reports": "Reports",
     "expenses": "Expenses",
     "payments": "Payments",
     "recurring": "Fixed Expenses",
@@ -108,6 +109,23 @@
       "viewPayments": "Payments",
       "dismiss": "Dismiss reminder"
     }
+  },
+  "reports": {
+    "title": "Reports",
+    "prevYear": "Previous year",
+    "nextYear": "Next year",
+    "yearTotal": "Year total",
+    "monthlyAverage": "Monthly average",
+    "vsLastYear": "vs. last year",
+    "vsYear": "vs. {{year}}",
+    "noPrevYear": "No expenses recorded in {{year}}",
+    "monthlyTotals": "Monthly spend vs. previous year",
+    "categoryTrend": "Spend by category over the year",
+    "budgetVsActual": "Budget vs. actual",
+    "budget": "Budget",
+    "actual": "Actual",
+    "noBudgets": "No budgets apply to this year. Set monthly limits on the Budgets page.",
+    "noData": "No expenses recorded in this year. Import a statement to get started."
   },
   "filters": {
     "title": "Filters",

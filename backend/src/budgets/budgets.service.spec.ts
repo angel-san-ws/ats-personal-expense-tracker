@@ -237,4 +237,46 @@ describe('BudgetsService', () => {
       expect(status.month).toBe(expected);
     });
   });
+
+  describe('monthlyLimits', () => {
+    it('applies the standing overall budget to every month, overrides win', async () => {
+      budgetsFind.mockResolvedValue([
+        { id: 'b-all', categoryId: null, month: null, amount: 1000 },
+        { id: 'o-jul', categoryId: null, month: '2026-07', amount: 1500 },
+        { id: 'o-other-year', categoryId: null, month: '2025-07', amount: 99 },
+      ]);
+
+      const limits = await service.monthlyLimits('u1', 2026);
+
+      expect(limits).toHaveLength(12);
+      expect(limits[0]).toEqual({ month: '2026-01', limit: 1000 });
+      expect(limits[6]).toEqual({ month: '2026-07', limit: 1500 });
+      expect(limits[11]).toEqual({ month: '2026-12', limit: 1000 });
+    });
+
+    it('sums category limits when no overall budget is set', async () => {
+      budgetsFind.mockResolvedValue([
+        { id: 'b1', categoryId: 'cat-1', month: null, amount: 500 },
+        { id: 'b2', categoryId: 'cat-2', month: null, amount: 300 },
+        { id: 'o1', categoryId: 'cat-1', month: '2026-03', amount: 700 },
+      ]);
+
+      const limits = await service.monthlyLimits('u1', 2026);
+
+      expect(limits[0]).toEqual({ month: '2026-01', limit: 800 });
+      // cat-1's March override replaces its standing amount in the sum.
+      expect(limits[2]).toEqual({ month: '2026-03', limit: 1000 });
+    });
+
+    it('returns null for months with no applicable budget', async () => {
+      budgetsFind.mockResolvedValue([
+        { id: 'o1', categoryId: 'cat-1', month: '2026-05', amount: 400 },
+      ]);
+
+      const limits = await service.monthlyLimits('u1', 2026);
+
+      expect(limits[0]).toEqual({ month: '2026-01', limit: null });
+      expect(limits[4]).toEqual({ month: '2026-05', limit: 400 });
+    });
+  });
 });

@@ -186,6 +186,16 @@ export class BatchUpdateExpensesDto {
   comercio?: string;
 }
 
+export class ReportQueryDto {
+  /** Calendar year to report on (e.g. 2026). Defaults to the current year. */
+  @IsOptional()
+  @IsInt()
+  @Min(2000)
+  @Max(2100)
+  @Type(() => Number)
+  year?: number;
+}
+
 export class QueryExpensesDto {
   /** ISO date (yyyy-mm-dd) inclusive lower bound on FECHA */
   @IsOptional()

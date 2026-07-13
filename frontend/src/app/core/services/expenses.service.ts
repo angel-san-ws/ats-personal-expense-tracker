@@ -8,6 +8,7 @@ import {
   ExpenseInput,
   ExpenseQuery,
   PagedExpenses,
+  YearReport,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -33,6 +34,13 @@ export class ExpensesService {
   summary(query: ExpenseQuery): Observable<DashboardSummary> {
     return this.http.get<DashboardSummary>(`${API_BASE}/expenses/summary`, {
       params: this.toParams(query),
+    });
+  }
+
+  /** Yearly trends report: monthly totals, category series, budget vs. actual. */
+  report(year: number): Observable<YearReport> {
+    return this.http.get<YearReport>(`${API_BASE}/expenses/report`, {
+      params: new HttpParams().set('year', year),
     });
   }
 

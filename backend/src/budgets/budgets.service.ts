@@ -99,6 +99,65 @@ export class BudgetsService {
     await this.budgets.remove(budget);
   }
 
+  /**
+   * Limit lookup for one month over all budget rows: the month's override
+   * wins over the standing amount when both exist.
+   */
+  private limitResolver(
+    budgets: Budget[],
+    month: string,
+  ): (categoryId: string | null) => BudgetLimit {
+    const standing = new Map(
+      budgets.filter((b) => !b.month).map((b) => [b.categoryId, b]),
+    );
+    const overrides = new Map(
+      budgets.filter((b) => b.month === month).map((b) => [b.categoryId, b]),
+    );
+    return (categoryId) => {
+      const budget = standing.get(categoryId);
+      const override = overrides.get(categoryId);
+      return {
+        budgetId: budget?.id ?? null,
+        amount: budget?.amount ?? null,
+        overrideId: override?.id ?? null,
+        overrideAmount: override?.amount ?? null,
+        effectiveAmount: override?.amount ?? budget?.amount ?? null,
+      };
+    };
+  }
+
+  /**
+   * Effective total limit for each month of a year (12 entries): the overall
+   * budget when one applies, otherwise the sum of the categories' effective
+   * limits; null for months where no budget applies at all.
+   */
+  async monthlyLimits(
+    userId: string,
+    year: number,
+  ): Promise<{ month: string; limit: number | null }[]> {
+    const budgets = await this.findAll(userId);
+    const categoryIds = [
+      ...new Set(
+        budgets
+          .map((b) => b.categoryId)
+          .filter((id): id is string => id !== null),
+      ),
+    ];
+    return Array.from({ length: 12 }, (_, i) => {
+      const month = `${year}-${String(i + 1).padStart(2, '0')}`;
+      const limitFor = this.limitResolver(budgets, month);
+      const overall = limitFor(null).effectiveAmount;
+      if (overall !== null) return { month, limit: overall };
+      const limits = categoryIds
+        .map((id) => limitFor(id).effectiveAmount)
+        .filter((v): v is number => v !== null);
+      return {
+        month,
+        limit: limits.length ? limits.reduce((a, b) => a + b, 0) : null,
+      };
+    });
+  }
+
   /** Budget vs actual spend for a month (defaults to the current month). */
   async status(
     userId: string,
@@ -136,23 +195,7 @@ export class BudgetsService {
     const spentByCategory = new Map(
       spentRows.map((r) => [r.categoryId, parseFloat(r.spent) || 0]),
     );
-    const standing = new Map(
-      budgets.filter((b) => !b.month).map((b) => [b.categoryId, b]),
-    );
-    const overrides = new Map(
-      budgets.filter((b) => b.month === month).map((b) => [b.categoryId, b]),
-    );
-    const limitFor = (categoryId: string | null): BudgetLimit => {
-      const budget = standing.get(categoryId);
-      const override = overrides.get(categoryId);
-      return {
-        budgetId: budget?.id ?? null,
-        amount: budget?.amount ?? null,
-        overrideId: override?.id ?? null,
-        overrideAmount: override?.amount ?? null,
-        effectiveAmount: override?.amount ?? budget?.amount ?? null,
-      };
-    };
+    const limitFor = this.limitResolver(budgets, month);
 
     const totalSpent = [...spentByCategory.values()].reduce((a, b) => a + b, 0);
 
