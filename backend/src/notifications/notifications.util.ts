@@ -20,7 +20,9 @@ export type PaymentDueSlot = 'initial' | 'final';
  * A user who enables notifications inside the final window gets only the
  * final email, never both on the same day.
  */
-export function paymentDueSlot(reminder: PaymentReminder): PaymentDueSlot | null {
+export function paymentDueSlot(
+  reminder: PaymentReminder,
+): PaymentDueSlot | null {
   if (reminder.status !== 'dueSoon') return null;
   return reminder.daysUntilDue <= 1 ? 'final' : 'initial';
 }
@@ -48,7 +50,10 @@ export interface OverspendTarget {
 export function overspentTargets(status: BudgetStatus): OverspendTarget[] {
   const targets: OverspendTarget[] = [];
   const { overall } = status;
-  if (overall.effectiveAmount !== null && overall.spent > overall.effectiveAmount) {
+  if (
+    overall.effectiveAmount !== null &&
+    overall.spent > overall.effectiveAmount
+  ) {
     targets.push({
       dedupeKey: `overall:${status.month}`,
       categoryName: null,

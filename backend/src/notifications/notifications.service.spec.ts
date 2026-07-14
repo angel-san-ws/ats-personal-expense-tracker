@@ -29,7 +29,9 @@ describe('NotificationsService', () => {
       ...overrides,
     }) as User;
 
-  const reminder = (overrides: Partial<PaymentReminder> = {}): PaymentReminder => ({
+  const reminder = (
+    overrides: Partial<PaymentReminder> = {},
+  ): PaymentReminder => ({
     accountId: 'acc-1',
     accountName: 'BAM Visa',
     accountColor: null,
@@ -131,9 +133,7 @@ describe('NotificationsService', () => {
 
     it('does not resend an already-notified slot', async () => {
       remindersList.mockResolvedValue([reminder({ daysUntilDue: 2 })]);
-      sentFind.mockResolvedValue([
-        { dedupeKey: 'acc-1:2026-07-16:initial' },
-      ]);
+      sentFind.mockResolvedValue([{ dedupeKey: 'acc-1:2026-07-16:initial' }]);
 
       await service.notifyUser(user({ notifyBudgetOverspend: false }));
 
@@ -143,9 +143,7 @@ describe('NotificationsService', () => {
 
     it('resends once more when still unpaid 1 day before due', async () => {
       remindersList.mockResolvedValue([reminder({ daysUntilDue: 1 })]);
-      sentFind.mockResolvedValue([
-        { dedupeKey: 'acc-1:2026-07-16:initial' },
-      ]);
+      sentFind.mockResolvedValue([{ dedupeKey: 'acc-1:2026-07-16:initial' }]);
 
       await service.notifyUser(user({ notifyBudgetOverspend: false }));
 

@@ -9,7 +9,8 @@
       "Bash(curl -sL --max-time 20 -w '\\\\nfinal_url: %{url_effective}\\\\n' 'https://api.frankfurter.app/2026-06-01..2026-06-10?from=USD&to=EUR,MXN')",
       "Bash(docker exec *)",
       "PowerShell(Set-Location c:\\\\AngelWork\\\\ATS\\\\Projects\\\\ats-personal-expense-tracker\\\\backend; \\(Get-Content src\\\\import\\\\alert-text-parser.spec.ts -Raw\\) -replace \"autorizacion: '\\(276178|235350|254893|164875|312038|109169|186166|97675\\)',\", \"autorizacion: '`$1',`r`n        kind: 'expense',\" | Set-Content src\\\\import\\\\alert-text-parser.spec.ts -Encoding utf8 -NoNewline)",
-      "PowerShell(npm test; if \\($?\\) { npm run build }; if \\($?\\) { npx eslint src/import/alert-text-parser.ts src/import/alert-text-parser.spec.ts src/import/import.service.ts }; \"EXIT=$LASTEXITCODE\")"
+      "PowerShell(npm test; if \\($?\\) { npm run build }; if \\($?\\) { npx eslint src/import/alert-text-parser.ts src/import/alert-text-parser.spec.ts src/import/import.service.ts }; \"EXIT=$LASTEXITCODE\")",
+      "WebSearch"
     ]
   }
 }

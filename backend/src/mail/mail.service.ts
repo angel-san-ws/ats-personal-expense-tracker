@@ -314,10 +314,7 @@ function infoEmailHtml(t: {
   footer: string;
 }): string {
   const rows = t.rows
-    .map(
-      (row) =>
-        `<li style="margin: 0 0 8px; line-height: 1.5;">${row}</li>`,
-    )
+    .map((row) => `<li style="margin: 0 0 8px; line-height: 1.5;">${row}</li>`)
     .join('');
   return `
     <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #1f2937;">
