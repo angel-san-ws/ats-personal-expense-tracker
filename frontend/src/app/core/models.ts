@@ -14,6 +14,7 @@ export interface SavedFilterState {
   category?: string;
   concept?: string;
   search?: string;
+  tags?: string[];
 }
 
 export interface User {
@@ -123,6 +124,10 @@ export interface Expense {
   categoryName: string | null;
   categoryColor: string | null;
   recurringExpenseId: string | null;
+  /** Free-form labels (normalized to lowercase on the backend). */
+  tags: string[];
+  /** Free-text note attached by the user. */
+  notes: string | null;
 }
 
 /** Payload for manually creating/editing an expense or payment. */
@@ -139,6 +144,16 @@ export interface ExpenseInput {
   tipoMovimiento?: string;
   /** Assigns the merchant's concept to this category (all its expenses). */
   categoryId?: string;
+  /** Free-form labels; empty array clears them on edit. */
+  tags?: string[];
+  /** Free-text note; empty string clears it on edit. */
+  notes?: string;
+}
+
+/** One of the user's tags with how many expenses carry it. */
+export interface TagCount {
+  tag: string;
+  count: number;
 }
 
 export interface CurrencyTotal {
@@ -166,6 +181,8 @@ export interface ExpenseQuery {
   categoryFilter?: string;
   kind?: 'expense' | 'payment' | 'all';
   currency?: string;
+  /** Rows matching ANY of these tags (sent comma-separated). */
+  tags?: string[];
   page?: number;
   size?: number;
   sortField?: string;

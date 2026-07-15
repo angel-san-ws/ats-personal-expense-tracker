@@ -58,6 +58,11 @@ export class ExpensesController {
     return this.expenses.distinctCurrencies(user.userId);
   }
 
+  @Get('tags')
+  tags(@CurrentUser() user: AuthUser) {
+    return this.expenses.distinctTags(user.userId);
+  }
+
   @Post()
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateExpenseDto) {
     return this.expenses.create(user.userId, dto);

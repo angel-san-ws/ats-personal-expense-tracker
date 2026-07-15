@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { BadgeModule } from 'primeng/badge';
@@ -28,6 +29,7 @@ interface Option {
     TranslocoDirective,
     DatePickerModule,
     SelectModule,
+    MultiSelectModule,
     InputTextModule,
     ButtonModule,
     BadgeModule,
@@ -158,6 +160,24 @@ interface Option {
             />
           </div>
 
+          @if (showTagFilter && tagOptions().length > 0) {
+            <div class="flex flex-column gap-1">
+              <label class="text-sm">{{ t('filters.tags') }}</label>
+              <p-multiselect
+                [(ngModel)]="tags"
+                (onChange)="apply()"
+                [options]="tagOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="true"
+                [filter]="true"
+                [placeholder]="t('filters.allTags')"
+                styleClass="w-12rem"
+                appendTo="body"
+              />
+            </div>
+          }
+
           <div class="flex flex-column gap-1 flex-1" style="min-width: 12rem">
             <label class="text-sm">{{ t('filters.search') }}</label>
             <input
@@ -214,6 +234,9 @@ export class FilterBarComponent implements OnInit {
   /** Renders a "Filters" header that collapses/expands the whole bar. */
   @Input() collapsible = false;
 
+  /** Shows the tag multi-select (Expenses/Payments; the dashboard skips it). */
+  @Input() showTagFilter = false;
+
   @Output() filtersChange = new EventEmitter<ExpenseQuery>();
 
   collapsed = signal(false);
@@ -229,6 +252,7 @@ export class FilterBarComponent implements OnInit {
   category: string | null = null; // categoryId or 'none'
   concept: string | null = null;
   search = '';
+  tags: string[] = [];
 
   readonly periodOptions = [
     { value: 'custom', labelKey: 'periods.custom' },
@@ -247,6 +271,7 @@ export class FilterBarComponent implements OnInit {
   currencyOptions = signal<Option[]>([]);
   categoryOptions = signal<Option[]>([]);
   conceptOptions = signal<Option[]>([]);
+  tagOptions = signal<Option[]>([]);
 
   ngOnInit(): void {
     this.accountsSvc.list().subscribe((accounts) =>
@@ -271,6 +296,13 @@ export class FilterBarComponent implements OnInit {
         concepts.map((c) => ({ label: c.name, value: c.id })),
       ),
     );
+    if (this.showTagFilter) {
+      this.expensesSvc.tags().subscribe((tags) =>
+        this.tagOptions.set(
+          tags.map((t) => ({ label: `${t.tag} (${t.count})`, value: t.tag })),
+        ),
+      );
+    }
     if (!this.restore()) {
       // No state from this browser session — fall back to the filter saved on
       // the account, so it survives logging out and back in.
@@ -304,7 +336,19 @@ export class FilterBarComponent implements OnInit {
       this.category,
       this.concept,
       this.search.trim(),
+      this.tags.length > 0,
     ].filter(Boolean).length;
+  }
+
+  /** Add a tag to the active filter (e.g. from a chip click) and re-apply. */
+  addTag(tag: string): void {
+    if (this.tags.includes(tag)) return;
+    // A tag added this session may not be in the loaded options yet.
+    if (!this.tagOptions().some((o) => o.value === tag)) {
+      this.tagOptions.update((opts) => [...opts, { label: tag, value: tag }]);
+    }
+    this.tags = [...this.tags, tag];
+    this.apply();
   }
 
   /**
@@ -362,6 +406,7 @@ export class FilterBarComponent implements OnInit {
     this.category = s.category ?? null;
     this.concept = s.concept ?? null;
     this.search = s.search ?? '';
+    this.tags = s.tags ?? [];
   }
 
   private currentState(): SavedFilterState {
@@ -374,6 +419,7 @@ export class FilterBarComponent implements OnInit {
       category: this.category ?? undefined,
       concept: this.concept ?? undefined,
       search: this.search || undefined,
+      tags: this.tags.length ? this.tags : undefined,
     };
   }
 
@@ -462,6 +508,7 @@ export class FilterBarComponent implements OnInit {
       currency: this.currency ?? undefined,
       conceptId: this.concept ?? undefined,
       search: this.search?.trim() || undefined,
+      tags: this.tags.length ? this.tags : undefined,
     };
     if (this.category === 'none') {
       query.categoryFilter = 'none';
@@ -485,6 +532,7 @@ export class FilterBarComponent implements OnInit {
     this.category = null;
     this.concept = null;
     this.search = '';
+    this.tags = [];
     this.apply();
   }
 }

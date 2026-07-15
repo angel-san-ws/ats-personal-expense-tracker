@@ -15,6 +15,8 @@ import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ButtonModule } from 'primeng/button';
+import { AutoCompleteModule } from 'primeng/autocomplete';
+import { TextareaModule } from 'primeng/textarea';
 import { MessageService } from 'primeng/api';
 
 import { AccountsService } from '../../core/services/accounts.service';
@@ -38,6 +40,8 @@ import { CategorySelectComponent } from './category-select';
     InputTextModule,
     InputNumberModule,
     ButtonModule,
+    AutoCompleteModule,
+    TextareaModule,
     CategorySelectComponent,
   ],
   template: `
@@ -113,6 +117,34 @@ import { CategorySelectComponent } from './category-select';
               styleClass="w-full"
             />
           </div>
+
+          <div class="flex flex-column gap-1">
+            <label>{{ t('expenses.tags') }}</label>
+            <p-autocomplete
+              [(ngModel)]="form.tags"
+              [multiple]="true"
+              [typeahead]="true"
+              [suggestions]="tagSuggestions()"
+              (completeMethod)="searchTags($event.query)"
+              (onKeyUp)="onTagKeyUp($event)"
+              [fluid]="true"
+              appendTo="body"
+              scrollHeight="12rem"
+              [placeholder]="form.tags.length ? '' : t('expenseForm.tagsPlaceholder')"
+            />
+            <small class="text-color-secondary">{{ t('expenseForm.tagsHint') }}</small>
+          </div>
+
+          <div class="flex flex-column gap-1">
+            <label>{{ t('expenses.notes') }}</label>
+            <textarea
+              pTextarea
+              [(ngModel)]="form.notes"
+              rows="3"
+              class="w-full"
+              [maxlength]="2000"
+            ></textarea>
+          </div>
         </div>
 
         <ng-template #footer>
@@ -154,6 +186,10 @@ export class ExpenseFormDialogComponent {
 
   accountOptions = signal<{ label: string; value: string }[]>([]);
 
+  /** The user's existing tags, offered as typeahead suggestions. */
+  private allTags: string[] = [];
+  tagSuggestions = signal<string[]>([]);
+
   form: {
     fecha: Date | null;
     comercio: string;
@@ -161,6 +197,8 @@ export class ExpenseFormDialogComponent {
     currency: string;
     accountId: string | null;
     categoryId: string | null;
+    tags: string[];
+    notes: string;
   } = this.emptyForm();
 
   headerKey(): string {
@@ -181,10 +219,13 @@ export class ExpenseFormDialogComponent {
           currency: expense.currency,
           accountId: expense.accountId,
           categoryId: expense.categoryId,
+          tags: [...(expense.tags ?? [])],
+          notes: expense.notes ?? '',
         }
       : this.emptyForm();
     this.loadCurrencies();
     this.loadAccounts();
+    this.loadTags();
     this.categorySelect?.reload();
     this.visible = true;
   }
@@ -208,6 +249,9 @@ export class ExpenseFormDialogComponent {
       // Null detaches the expense from its account on edit.
       accountId: this.form.accountId,
       categoryId: this.form.categoryId || undefined,
+      // Always sent so clearing tags/notes works on edit.
+      tags: this.form.tags,
+      notes: this.form.notes.trim(),
     };
     const current = this.editing();
     const req = current
@@ -245,7 +289,42 @@ export class ExpenseFormDialogComponent {
       currency: this.defaultCurrency(),
       accountId: null,
       categoryId: null,
+      tags: [] as string[],
+      notes: '',
     };
+  }
+
+  /**
+   * PrimeNG's AutoComplete ignores Enter on free text while typeahead is on
+   * (it only picks highlighted suggestions), so add the typed tag ourselves.
+   * When Enter picked a suggestion instead, the input is already empty and
+   * this is a no-op.
+   */
+  onTagKeyUp(event: KeyboardEvent): void {
+    if (event.key !== 'Enter') return;
+    const input = event.target as HTMLInputElement;
+    const tag = input.value.trim().toLowerCase();
+    if (tag && !this.form.tags.includes(tag)) {
+      this.form.tags = [...this.form.tags, tag];
+    }
+    input.value = '';
+  }
+
+  /** Typeahead over the user's existing tags; typing Enter adds a new one. */
+  searchTags(query: string): void {
+    const q = query.trim().toLowerCase();
+    this.tagSuggestions.set(
+      this.allTags.filter(
+        (tag) => (!q || tag.includes(q)) && !this.form.tags.includes(tag),
+      ),
+    );
+  }
+
+  private loadTags(): void {
+    this.expensesSvc.tags().subscribe({
+      next: (tags) => (this.allTags = tags.map((t) => t.tag)),
+      error: () => {},
+    });
   }
 
   private defaultCurrency(): string {

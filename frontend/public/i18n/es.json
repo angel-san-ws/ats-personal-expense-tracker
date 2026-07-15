@@ -139,6 +139,8 @@
     "allAccounts": "Todas las cuentas",
     "allCurrencies": "Todas las monedas",
     "allCategories": "Todas las categorías",
+    "tags": "Etiquetas",
+    "allTags": "Todas las etiquetas",
     "uncategorized": "Sin categoría",
     "apply": "Aplicar",
     "clear": "Limpiar",
@@ -184,7 +186,10 @@
     "deleteSelectedConfirm": "¿Eliminar {{count}} registro(s) seleccionado(s)? Esta acción no se puede deshacer.",
     "deletedCount": "{{count}} registro(s) eliminado(s)",
     "recurringHint": "Generado automáticamente desde un gasto fijo",
-    "convertedHint": "Valor aproximado en tu moneda base al tipo de cambio de referencia de la fecha del gasto"
+    "convertedHint": "Valor aproximado en tu moneda base al tipo de cambio de referencia de la fecha del gasto",
+    "tags": "Etiquetas",
+    "notes": "Notas",
+    "tagFilterHint": "Haz clic para filtrar por esta etiqueta"
   },
   "categorySelect": {
     "label": "Categoría",
@@ -253,7 +258,9 @@
     "cancel": "Cancelar",
     "created": "Registro creado",
     "updated": "Registro actualizado",
-    "noAccount": "Sin cuenta"
+    "noAccount": "Sin cuenta",
+    "tagsPlaceholder": "Agregar etiquetas…",
+    "tagsHint": "Presiona Enter para agregar una etiqueta (p. ej. vacaciones-2026, reembolsable). Máximo 10 etiquetas."
   },
   "accounts": {
     "title": "Cuentas",

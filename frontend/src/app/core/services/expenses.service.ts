@@ -8,6 +8,7 @@ import {
   ExpenseInput,
   ExpenseQuery,
   PagedExpenses,
+  TagCount,
   YearReport,
 } from '../models';
 
@@ -18,7 +19,10 @@ export class ExpensesService {
   private toParams(query: ExpenseQuery): HttpParams {
     let params = new HttpParams();
     Object.entries(query).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (Array.isArray(value)) {
+        // e.g. tags — sent comma-separated; the backend splits them back.
+        if (value.length) params = params.set(key, value.join(','));
+      } else if (value !== undefined && value !== null && value !== '') {
         params = params.set(key, String(value));
       }
     });
@@ -59,6 +63,11 @@ export class ExpensesService {
 
   currencies(): Observable<string[]> {
     return this.http.get<string[]>(`${API_BASE}/expenses/currencies`);
+  }
+
+  /** The user's distinct tags with usage counts, most used first. */
+  tags(): Observable<TagCount[]> {
+    return this.http.get<TagCount[]>(`${API_BASE}/expenses/tags`);
   }
 
   setExcluded(id: string, excluded: boolean): Observable<void> {

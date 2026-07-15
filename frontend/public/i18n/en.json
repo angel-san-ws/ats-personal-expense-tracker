@@ -139,6 +139,8 @@
     "allAccounts": "All accounts",
     "allCurrencies": "All currencies",
     "allCategories": "All categories",
+    "tags": "Tags",
+    "allTags": "All tags",
     "uncategorized": "Uncategorized",
     "apply": "Apply",
     "clear": "Clear",
@@ -184,7 +186,10 @@
     "deleteSelectedConfirm": "Delete {{count}} selected record(s)? This cannot be undone.",
     "deletedCount": "{{count}} record(s) deleted",
     "recurringHint": "Generated automatically from a fixed expense",
-    "convertedHint": "Approximate value in your base currency at the reference rate of the expense date"
+    "convertedHint": "Approximate value in your base currency at the reference rate of the expense date",
+    "tags": "Tags",
+    "notes": "Notes",
+    "tagFilterHint": "Click to filter by this tag"
   },
   "categorySelect": {
     "label": "Category",
@@ -253,7 +258,9 @@
     "cancel": "Cancel",
     "created": "Record created",
     "updated": "Record updated",
-    "noAccount": "No account"
+    "noAccount": "No account",
+    "tagsPlaceholder": "Add tags…",
+    "tagsHint": "Press Enter to add a tag (e.g. vacation-2026, reimbursable). Up to 10 tags."
   },
   "accounts": {
     "title": "Accounts",

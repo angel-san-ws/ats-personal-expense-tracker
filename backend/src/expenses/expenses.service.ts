@@ -20,6 +20,7 @@ import {
   QueryExpensesDto,
   UpdateExpenseDto,
 } from './dto';
+import { normalizeTags } from './tag.util';
 
 /**
  * Amount converted to the user's base currency (bind :base). Unstamped
@@ -53,6 +54,13 @@ export interface ExpenseRow {
   categoryName: string | null;
   categoryColor: string | null;
   recurringExpenseId: string | null;
+  tags: string[];
+  notes: string | null;
+}
+
+export interface TagCount {
+  tag: string;
+  count: number;
 }
 
 export interface CurrencyTotal {
@@ -168,6 +176,8 @@ export class ExpensesService {
       tarjeta: dto.tarjeta?.trim() || null,
       noTarjeta: dto.noTarjeta?.trim() || null,
       tipoMovimiento: dto.tipoMovimiento?.trim() || null,
+      tags: normalizeTags(dto.tags),
+      notes: dto.notes?.trim() || null,
     });
     return this.expenses.save(expense);
   }
@@ -199,6 +209,8 @@ export class ExpensesService {
     if (dto.tipoMovimiento !== undefined) {
       expense.tipoMovimiento = dto.tipoMovimiento.trim() || null;
     }
+    if (dto.tags !== undefined) expense.tags = normalizeTags(dto.tags);
+    if (dto.notes !== undefined) expense.notes = dto.notes.trim() || null;
     if (dto.comercio !== undefined) {
       const comercio = dto.comercio.trim();
       if (comercio && comercio !== expense.comercio) {
@@ -365,7 +377,14 @@ export class ExpensesService {
     }
 
     if (dto.search) {
-      qb.andWhere('e.comercio ILIKE :search', { search: `%${dto.search}%` });
+      qb.andWhere('(e.comercio ILIKE :search OR e.notes ILIKE :search)', {
+        search: `%${dto.search}%`,
+      });
+    }
+
+    // Row matches when it carries ANY of the selected tags (array overlap).
+    if (dto.tags?.length) {
+      qb.andWhere('e.tags && :tags::text[]', { tags: dto.tags });
     }
 
     if (dto.conceptId) {
@@ -423,6 +442,8 @@ export class ExpensesService {
         'e.currency AS currency',
         'e.exchange_rate AS "exchangeRate"',
         'e.concept_id AS "conceptId"',
+        'e.tags AS tags',
+        'e.notes AS notes',
         'e.recurring_expense_id AS "recurringExpenseId"',
         'concept.category_id AS "categoryId"',
         'category.name AS "categoryName"',
@@ -460,6 +481,8 @@ export class ExpensesService {
       currency: r.currency,
       exchangeRate: r.exchangeRate == null ? null : parseFloat(r.exchangeRate),
       conceptId: r.conceptId ?? null,
+      tags: r.tags ?? [],
+      notes: r.notes ?? null,
       recurringExpenseId: r.recurringExpenseId ?? null,
       categoryId: r.categoryId ?? null,
       categoryName: r.categoryName ?? null,
@@ -693,6 +716,22 @@ export class ExpensesService {
       .orderBy('e.currency', 'ASC')
       .getRawMany();
     return rows.map((r) => r.currency).filter(Boolean);
+  }
+
+  /** The user's distinct tags with usage counts (autocomplete/filter dropdown). */
+  async distinctTags(userId: string): Promise<TagCount[]> {
+    const rows: { tag: string; count: string }[] = await this.expenses.query(
+      `SELECT tag, COUNT(*) AS count
+         FROM expenses e, unnest(e.tags) AS tag
+        WHERE e.user_id = $1
+        GROUP BY tag
+        ORDER BY count DESC, tag ASC`,
+      [userId],
+    );
+    return rows.map((r) => ({
+      tag: r.tag,
+      count: parseInt(r.count, 10) || 0,
+    }));
   }
 
   /** Distinct card names, card numbers and movement types, for suggestion dropdowns. */

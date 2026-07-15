@@ -85,6 +85,14 @@ export class Expense {
   @Column({ type: 'boolean', default: false })
   excluded: boolean;
 
+  /** Free-form labels (normalized: trimmed, lowercase, deduped). */
+  @Column({ type: 'text', array: true, default: () => "'{}'" })
+  tags: string[];
+
+  /** Free-text note attached by the user. */
+  @Column({ type: 'text', nullable: true })
+  notes: string | null;
+
   /** ISO currency code of the amount (detected on import, e.g. GTQ, USD). */
   @Column({ type: 'varchar', length: 8, default: 'GTQ' })
   currency: string;

@@ -1,4 +1,5 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
+import { MAX_TAG_LENGTH, MAX_TAGS } from './tag.util';
 import {
   ArrayMaxSize,
   ArrayNotEmpty,
@@ -73,6 +74,20 @@ export class CreateExpenseDto {
   @IsOptional()
   @IsUUID()
   categoryId?: string;
+
+  /** Free-form labels; normalized (trim/lowercase/dedupe) on save. */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(MAX_TAGS)
+  @IsString({ each: true })
+  @MaxLength(MAX_TAG_LENGTH, { each: true })
+  tags?: string[];
+
+  /** Free-text note. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  notes?: string;
 }
 
 export class UpdateExpenseDto {
@@ -122,6 +137,20 @@ export class UpdateExpenseDto {
   @IsOptional()
   @IsUUID()
   categoryId?: string;
+
+  /** Free-form labels; normalized (trim/lowercase/dedupe) on save. Empty array clears them. */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(MAX_TAGS)
+  @IsString({ each: true })
+  @MaxLength(MAX_TAG_LENGTH, { each: true })
+  tags?: string[];
+
+  /** Free-text note; empty string clears it. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  notes?: string;
 }
 
 export class BatchDeleteExpensesDto {
@@ -244,6 +273,23 @@ export class QueryExpensesDto {
   @IsOptional()
   @IsString()
   currency?: string;
+
+  /**
+   * Filter rows carrying ANY of these tags. Accepts a comma-separated value
+   * ("tags=a,b") or a repeated param ("tags=a&tags=b").
+   */
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) => {
+    const parts = (Array.isArray(value) ? value : [value])
+      .filter((v): v is string => typeof v === 'string')
+      .flatMap((v) => v.split(','))
+      .map((v) => v.trim().toLowerCase())
+      .filter(Boolean);
+    return parts.length ? [...new Set(parts)] : undefined;
+  })
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 
   @IsOptional()
   @IsInt()

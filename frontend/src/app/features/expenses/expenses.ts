@@ -101,7 +101,7 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
         </div>
       </div>
 
-      <app-filter-bar persistKey="expenses" [allowSave]="true" [collapsible]="true" (filtersChange)="onFilters($event)" />
+      <app-filter-bar #filterBar persistKey="expenses" [allowSave]="true" [collapsible]="true" [showTagFilter]="true" (filtersChange)="onFilters($event)" />
 
       <p-card>
         <p-table
@@ -170,6 +170,25 @@ import { CurrencyTotal, Expense, ExpenseQuery } from '../../core/models';
                     class="pi pi-sync text-xs text-color-secondary ml-1"
                     [pTooltip]="t('expenses.recurringHint')"
                   ></i>
+                }
+                @if (e.notes) {
+                  <i
+                    class="pi pi-comment text-xs text-color-secondary ml-1"
+                    [pTooltip]="e.notes"
+                  ></i>
+                }
+                @if (e.tags.length) {
+                  <span class="flex flex-wrap gap-1 mt-1">
+                    @for (tag of e.tags; track tag) {
+                      <p-tag
+                        [value]="tag"
+                        severity="secondary"
+                        class="cursor-pointer"
+                        [pTooltip]="t('expenses.tagFilterHint')"
+                        (click)="filterBar.addTag(tag)"
+                      />
+                    }
+                  </span>
                 }
               </td>
               <td>
