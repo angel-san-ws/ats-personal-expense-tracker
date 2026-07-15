@@ -32,6 +32,12 @@ export interface BudgetCategoryStatus extends BudgetLimit {
   color: string;
   /** Spend for the month, converted to the base currency. */
   spent: number;
+  /**
+   * Portion of `spent` generated from recurring expense templates — fixed
+   * amounts that won't repeat within the month, so pace projections should
+   * count them at face value instead of extrapolating them.
+   */
+  recurringSpent: number;
 }
 
 export interface BudgetStatus {
@@ -41,7 +47,7 @@ export interface BudgetStatus {
   /** Foreign-currency rows without a rate, excluded from the spent totals. */
   unconvertedCount: number;
   /** All spending in the month (uncategorized included) vs the overall budget. */
-  overall: BudgetLimit & { spent: number };
+  overall: BudgetLimit & { spent: number; recurringSpent: number };
   /** One row per user category, budgeted or not. */
   categories: BudgetCategoryStatus[];
 }
@@ -181,9 +187,17 @@ export class BudgetsService {
         spendQuery()
           .select('concept.category_id', 'categoryId')
           .addSelect(`COALESCE(SUM(${CONVERTED}), 0)`, 'spent')
+          .addSelect(
+            `COALESCE(SUM(${CONVERTED}) FILTER (WHERE e.recurring_expense_id IS NOT NULL), 0)`,
+            'recurringSpent',
+          )
           .setParameter('base', base)
           .groupBy('concept.category_id')
-          .getRawMany<{ categoryId: string | null; spent: string }>(),
+          .getRawMany<{
+            categoryId: string | null;
+            spent: string;
+            recurringSpent: string;
+          }>(),
         spendQuery()
           .andWhere('e.exchange_rate IS NULL')
           .andWhere('e.currency != :base', { base })
@@ -193,23 +207,36 @@ export class BudgetsService {
       ]);
 
     const spentByCategory = new Map(
-      spentRows.map((r) => [r.categoryId, parseFloat(r.spent) || 0]),
+      spentRows.map((r) => [
+        r.categoryId,
+        {
+          spent: parseFloat(r.spent) || 0,
+          recurring: parseFloat(r.recurringSpent) || 0,
+        },
+      ]),
     );
     const limitFor = this.limitResolver(budgets, month);
 
-    const totalSpent = [...spentByCategory.values()].reduce((a, b) => a + b, 0);
+    const totals = [...spentByCategory.values()];
+    const totalSpent = totals.reduce((a, b) => a + b.spent, 0);
+    const totalRecurring = totals.reduce((a, b) => a + b.recurring, 0);
 
     return {
       month,
       baseCurrency: base,
       unconvertedCount,
-      overall: { ...limitFor(null), spent: totalSpent },
+      overall: {
+        ...limitFor(null),
+        spent: totalSpent,
+        recurringSpent: totalRecurring,
+      },
       categories: categories.map((c) => ({
         categoryId: c.id,
         categoryName: c.name,
         color: c.color,
         ...limitFor(c.id),
-        spent: spentByCategory.get(c.id) ?? 0,
+        spent: spentByCategory.get(c.id)?.spent ?? 0,
+        recurringSpent: spentByCategory.get(c.id)?.recurring ?? 0,
       })),
     };
   }

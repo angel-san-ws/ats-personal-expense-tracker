@@ -12,6 +12,7 @@ import { MessageService } from 'primeng/api';
 import { BudgetsService } from '../../core/services/budgets.service';
 import { BudgetAlertService } from '../../core/services/budget-alert.service';
 import { AtsCurrencyPipe } from '../../core/currency.pipe';
+import { projectMonthEnd } from '../../core/projection.util';
 import { BudgetCategoryStatus, BudgetStatus } from '../../core/models';
 
 function currentMonth(): string {
@@ -22,6 +23,8 @@ function currentMonth(): string {
 interface BudgetRow extends BudgetCategoryStatus {
   /** Percent of the effective budget used; null when no budget is set. */
   pct: number | null;
+  /** Projected month-end spend; null when unbudgeted or no projection applies. */
+  projected: number | null;
 }
 
 @Component({
@@ -135,6 +138,9 @@ interface BudgetRow extends BudgetCategoryStatus {
                 <th style="width: 11rem" class="text-right">{{ t('budgets.budget') }}</th>
                 <th style="width: 11rem" class="text-right">{{ t('budgets.thisMonth') }}</th>
                 <th style="width: 8rem" class="text-right">{{ t('budgets.spent') }}</th>
+                @if (hasProjections()) {
+                  <th style="width: 10rem" class="text-right">{{ t('budgets.projected') }}</th>
+                }
                 <th style="width: 8rem" class="text-right">{{ t('budgets.remaining') }}</th>
                 <th style="width: 18%">{{ t('budgets.progress') }}</th>
                 <th style="width: 4rem"></th>
@@ -173,6 +179,22 @@ interface BudgetRow extends BudgetCategoryStatus {
                   />
                 </td>
                 <td class="text-right">{{ r.spent | atsCurrency: s.baseCurrency }}</td>
+                @if (hasProjections()) {
+                  <td class="text-right">
+                    @if (r.projected !== null) {
+                      <span [style.color]="onPaceToExceed(r) ? '#ef4444' : undefined">
+                        {{ r.projected | atsCurrency: s.baseCurrency }}
+                      </span>
+                      @if (onPaceToExceed(r)) {
+                        <div class="text-xs" style="color: #ef4444">
+                          {{ t('budgets.onPaceToExceed') }}
+                        </div>
+                      }
+                    } @else {
+                      <span class="text-color-secondary">—</span>
+                    }
+                  </td>
+                }
                 <td class="text-right" [style.color]="r.effectiveAmount !== null ? remainingColor(r.pct) : undefined">
                   @if (r.effectiveAmount !== null) {
                     {{ r.effectiveAmount - r.spent | atsCurrency: s.baseCurrency }}
@@ -211,7 +233,7 @@ interface BudgetRow extends BudgetCategoryStatus {
             </ng-template>
             <ng-template #emptymessage>
               <tr>
-                <td colspan="7" class="text-center p-4 text-color-secondary">
+                <td [attr.colspan]="hasProjections() ? 8 : 7" class="text-center p-4 text-color-secondary">
                   {{ t('budgets.empty') }}
                 </td>
               </tr>
@@ -257,6 +279,9 @@ export class BudgetsComponent implements OnInit {
     return o?.effectiveAmount ? (o.spent / o.effectiveAmount) * 100 : null;
   });
 
+  /** Whether any row can carry a projection (viewed month is the current one). */
+  hasProjections = computed(() => this.rows().some((r) => r.projected !== null));
+
   /** Budgeted categories first (most-used budget on top), then the rest by spend. */
   rows = computed<BudgetRow[]>(() => {
     const s = this.status();
@@ -264,6 +289,10 @@ export class BudgetsComponent implements OnInit {
     const rows = s.categories.map((c) => ({
       ...c,
       pct: c.effectiveAmount ? (c.spent / c.effectiveAmount) * 100 : null,
+      projected:
+        c.effectiveAmount !== null
+          ? projectMonthEnd(c.spent, s.month, c.recurringSpent)
+          : null,
     }));
     return [
       ...rows.filter((r) => r.pct !== null).sort((a, b) => b.pct! - a.pct!),
@@ -386,6 +415,14 @@ export class BudgetsComponent implements OnInit {
       },
       error: () => (this.saving = false),
     });
+  }
+
+  onPaceToExceed(row: BudgetRow): boolean {
+    return (
+      row.projected !== null &&
+      row.effectiveAmount !== null &&
+      row.projected > row.effectiveAmount
+    );
   }
 
   cappedPct(pct: number | null): number {

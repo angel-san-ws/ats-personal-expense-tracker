@@ -12,7 +12,11 @@ describe('BudgetsService', () => {
   let budgetsCreate: jest.Mock;
   let categoriesFindAll: jest.Mock;
   let categoriesFindOne: jest.Mock;
-  let spentRows: { categoryId: string | null; spent: string }[];
+  let spentRows: {
+    categoryId: string | null;
+    spent: string;
+    recurringSpent?: string;
+  }[];
   let unconvertedCount: number;
   /** Recorded where/andWhere params so tests can assert the date window. */
   let queryParams: Record<string, unknown>;
@@ -137,7 +141,7 @@ describe('BudgetsService', () => {
         { id: 'b1', categoryId: 'cat-1', amount: 500 },
       ]);
       spentRows = [
-        { categoryId: 'cat-1', spent: '320.50' },
+        { categoryId: 'cat-1', spent: '320.50', recurringSpent: '120' },
         { categoryId: null, spent: '80' }, // uncategorized
       ];
 
@@ -154,6 +158,7 @@ describe('BudgetsService', () => {
           overrideAmount: null,
           effectiveAmount: 500,
           spent: 320.5,
+          recurringSpent: 120,
         },
         {
           categoryId: 'cat-2',
@@ -165,6 +170,7 @@ describe('BudgetsService', () => {
           overrideAmount: null,
           effectiveAmount: null,
           spent: 0,
+          recurringSpent: 0,
         },
       ]);
       // Overall spend includes uncategorized rows; no overall budget set.
@@ -175,6 +181,7 @@ describe('BudgetsService', () => {
         overrideAmount: null,
         effectiveAmount: null,
         spent: 400.5,
+        recurringSpent: 120,
       });
     });
 
@@ -194,6 +201,7 @@ describe('BudgetsService', () => {
         overrideAmount: null,
         effectiveAmount: 10000,
         spent: 1234,
+        recurringSpent: 0,
       });
       expect(status.unconvertedCount).toBe(3);
       expect(status.baseCurrency).toBe('GTQ');

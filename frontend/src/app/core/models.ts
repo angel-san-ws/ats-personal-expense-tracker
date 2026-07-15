@@ -315,6 +315,11 @@ export interface BudgetCategoryStatus extends BudgetLimit {
   color: string;
   /** Spend for the month, converted to the base currency. */
   spent: number;
+  /**
+   * Portion of `spent` generated from recurring expense templates — fixed
+   * amounts that projections count at face value instead of extrapolating.
+   */
+  recurringSpent: number;
 }
 
 /** Budget vs actual for one month. */
@@ -323,7 +328,7 @@ export interface BudgetStatus {
   baseCurrency: string;
   /** Foreign-currency rows without a rate, excluded from the spent totals. */
   unconvertedCount: number;
-  overall: BudgetLimit & { spent: number };
+  overall: BudgetLimit & { spent: number; recurringSpent: number };
   categories: BudgetCategoryStatus[];
 }
 

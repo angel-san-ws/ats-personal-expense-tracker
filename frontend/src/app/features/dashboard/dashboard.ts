@@ -10,6 +10,7 @@ import { TagModule } from 'primeng/tag';
 
 import { FilterBarComponent } from '../shared/filter-bar';
 import { AtsCurrencyPipe } from '../../core/currency.pipe';
+import { projectMonthEnd, projectionPct } from '../../core/projection.util';
 import { ExpensesService } from '../../core/services/expenses.service';
 import { BudgetsService } from '../../core/services/budgets.service';
 import { BudgetAlertService } from '../../core/services/budget-alert.service';
@@ -200,6 +201,18 @@ import {
                       {{ b.overall.spent | atsCurrency: b.baseCurrency }} / {{ b.overall.effectiveAmount | atsCurrency: b.baseCurrency }}
                     </span>
                   </div>
+                  @if (overallProjection(); as p) {
+                    <div
+                      class="text-sm"
+                      [class.text-color-secondary]="!p.over"
+                      [style.color]="p.over ? '#ef4444' : undefined"
+                    >
+                      {{ t(p.over ? 'budgets.projectedOver' : 'budgets.projectedWithin', {
+                        amount: (p.projected | atsCurrency: b.baseCurrency),
+                        pct: p.pctLabel
+                      }) }}
+                    </div>
+                  }
                 }
                 @for (row of topBudgets(); track row.categoryId) {
                   <div class="flex align-items-center gap-2">
@@ -314,6 +327,27 @@ export class DashboardComponent {
       (b.overall.effectiveAmount !== null ||
         b.categories.some((c) => c.effectiveAmount !== null))
     );
+  });
+
+  /**
+   * Month-end projection vs the overall budget; null when no overall budget
+   * is set or the projection is undefined (viewed month isn't the current
+   * one, or it's too early in the month).
+   */
+  overallProjection = computed(() => {
+    const b = this.budgetStatus();
+    const limit = b?.overall.effectiveAmount ?? null;
+    if (!b || limit === null) return null;
+    const projected = projectMonthEnd(
+      b.overall.spent,
+      b.month,
+      b.overall.recurringSpent,
+    );
+    if (projected === null) return null;
+    const pct = projectionPct(projected, limit);
+    if (pct === null) return null;
+    const over = pct > 100;
+    return { projected, over, pctLabel: Math.round(over ? pct - 100 : pct) };
   });
 
   /** The 3 budgeted categories closest to (or past) their limit. */

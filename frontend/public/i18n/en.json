@@ -378,6 +378,10 @@
     "over": "over budget",
     "thisMonth": "This month",
     "defaultAmount": "Default",
+    "projected": "Projected",
+    "onPaceToExceed": "On pace to exceed",
+    "projectedOver": "Projected: {{amount}} by month end ({{pct}}% over budget)",
+    "projectedWithin": "Projected: {{amount}} by month end ({{pct}}% of budget)",
     "alert": {
       "title": "Over budget",
       "detail": "Over the monthly limit: {{names}}"

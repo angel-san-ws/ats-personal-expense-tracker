@@ -60,6 +60,7 @@ describe('NotificationsService', () => {
       overrideAmount: null,
       effectiveAmount: null,
       spent: 0,
+      recurringSpent: 0,
     },
     categories: [],
     ...overrides,
@@ -80,6 +81,7 @@ describe('NotificationsService', () => {
     overrideAmount: null,
     effectiveAmount: limit,
     spent,
+    recurringSpent: 0,
   });
 
   beforeEach(() => {

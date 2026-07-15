@@ -378,6 +378,10 @@
     "over": "sobre el presupuesto",
     "thisMonth": "Este mes",
     "defaultAmount": "Predeterminado",
+    "projected": "Proyectado",
+    "onPaceToExceed": "En camino a excederlo",
+    "projectedOver": "Proyección: {{amount}} al fin de mes ({{pct}}% sobre el presupuesto)",
+    "projectedWithin": "Proyección: {{amount}} al fin de mes ({{pct}}% del presupuesto)",
     "alert": {
       "title": "Presupuesto excedido",
       "detail": "Por encima del límite mensual: {{names}}"
